@@ -5,7 +5,7 @@
  * @Sync Footage by using TimeCode
  * License GPL V3
  * @version 1.12  --> Clean CallBack et rorganise functions and compatible windows correct the copy functiions with multiples properties.
- * @version 1.13->debug time in of a layer
+ * @version 1.13->debug timeremap of a layer
  *  TO DO LIST  1.14: 
  *sort files with same names but differient extensions in same folder
  *
