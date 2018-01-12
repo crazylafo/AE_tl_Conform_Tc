@@ -1,74 +1,1 @@
-﻿/**
- * Extends  After Effects Objects for the Conformation script
- * @version     0.1
- */
-
- 
-//PROJET PART
-
-Project.prototype.findFolderWithName = function(name, createIt) {
-    var create = createIt || undefined;
-    var item;
-    for(var i=1;i<=this.numItems;i++) {
-        if (this.item(i) instanceof FolderItem && this.item(i).name === name){
-            item = this.item(i);
-            break;
-        }
-    }
-
-    if (createIt && !item) {
-        item = this.items.addFolder(name)
-    }
-
-    return item;
-}
-
-
-Project.prototype.findCompWithName = function(name) {
-    var item = null;
-    for(var i=1;i<=this.numItems;i++) {
-        if (this.item(i) instanceof CompItem && this.item(i).name === name){
-            item = this.item(i);
-            break;
-        }
-    }
-
-    return item;
-}
-
-//FOLDER PART
-
-/**
- * Retrieve all files recursively matching filter
- * @param {String|RegExp} filter
- * @returns {Array} Array of file Objects {temporary  window} With progressBar
- */
-Folder.prototype.scanFilesWithProgressBar = function(filter) {
-    var filelist = [];
-    if (this.exists) {
-        var files = this.getFiles();
-        
-        var tempWindow = new Window('palette');
-        tempWindow.info = tempWindow.add("staticText",[0,0,200,50], "Scanning Files");
-        tempWindow.progressScan = tempWindow.add("progressBar", undefined, 0, files.length);
-        tempWindow.progressScan.preferredSize.width = 300;
-        tempWindow.show();
-        
-        for (var i=0; i<files.length; i++) {
-            tempWindow .progressScan.value = i;
-            var file = files[i];
-            if (file instanceof Folder) {
-                var list = file.scanFilesWithProgressBar(filter)
-                for(var j=0; j<list.length; j++) { filelist.push(list[j]); }
-            } else if (file instanceof File) {
-                if (file.name.match(filter)) filelist.push(file);
-            }
-        }
-    }
-    tempWindow.close();
-
-    return filelist;
-}
-
-
-
+﻿/** * Extends  After Effects Objects for the Conformation script * @version     0.1 */ //PROJET PARTfindFolderWithName = function(name, createIt) {    var create = createIt || undefined;    var item;    for(var i=1;i<=this.numItems;i++) {        if (this.item(i) instanceof FolderItem && this.item(i).name === name){            item = this.item(i);            break;        }    }    if (createIt && !item) {        item = this.items.addFolder(name)    }    return item;}findCompWithName = function(name) {    var item = null;    for(var i=1;i<=this.numItems;i++) {        if (this.item(i) instanceof CompItem && this.item(i).name === name){            item = this.item(i);            break;        }    }    return item;}//FOLDER PART/** * Retrieve all files recursively matching filter * @param {String|RegExp} filter * @returns {Array} Array of file Objects {temporary  window} With progressBar */scanFilesWithProgressBar = function(filter) {    var filelist = [];    if (this.exists) {        var files = this.getFiles();                var tempWindow = new Window('palette');        tempWindow.info = tempWindow.add("staticText",[0,0,200,50], "Scanning Files");        tempWindow.progressScan = tempWindow.add("progressBar", undefined, 0, files.length);        tempWindow.progressScan.preferredSize.width = 300;        tempWindow.show();                for (var i=0; i<files.length; i++) {            tempWindow .progressScan.value = i;            var file = files[i];            if (file instanceof Folder) {                var list = file.scanFilesWithProgressBar(filter)                for(var j=0; j<list.length; j++) { filelist.push(list[j]); }            } else if (file instanceof File) {                if (file.name.match(filter)) filelist.push(file);            }        }    }    tempWindow.close();    return filelist;}
