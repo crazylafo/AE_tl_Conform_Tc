@@ -7,11 +7,11 @@
 * @version 1.13->debug time in of a layer
 * @version 1.14 -->conform by duration
 * @version 1.17-->auto conform mode first version
-* @version 1.19--> *sort files with same names but differient extensions in same folder in timecodemode macos
+* @version 1.19--> sort files with same names but differient extensions in same folder in timecodemode macos
 *                             * add rotation param to transform param list in timecode and automatic mode
-* @version 1.20 *import video files in timecodeMode
-* @version 1.21 *debug videospec time values
-     @version 1.22 *Send somes functions to the lib.jsxinc and transform the automatic method
+* @version 1.20 import video files in timecodeMode
+* @version 1.21 debug videospec time values
+  @version 1.22 Send somes functions to the lib.jsxinc and transform the automatic method
   */                            
 
 
@@ -49,7 +49,7 @@
                 MainGrp: Group {
                 orientation : 'column',
                 alignement : ['fill', 'fill'],
-                alignChildren:['left','top'],
+                alignChildren:['fill','top'],
                 MethodeGrp : Panel {
                     text: 'Confomation Settings',
                     orientation: 'row',
@@ -58,30 +58,29 @@
                         rbDuration : RadioButton {text: 'sync by Duration'},
                         rbAutomatic : RadioButton {text: 'sync by Detection (IN DEVELOPPEMENT)'}
                     }
+                    impSettingsMethodGrp : Panel {
+                         text: 'Import Settings',
+                         orientation: 'column',
+                         alignChildren: ['fill', 'fill'],
+                         ddlSelectMethod: DropDownList { properties: {items : ['IMPORT FOOTAGE WITHOUT PRECOMPOSING', ' WATCH IN EXISTING PRECOMPS ONLY', 'IMPORT FOOTAGE AND PRECOMPOSE']}},
+                         precompGrp : Group{
+                            orientation: 'row',
+                            alignChildren: ['fill', 'center'],
+                            stxRef : StaticText  {text: "Precomps Name"},
+                            etxName : EditText  {text : "SHOT"},
+                            cbWatermark : Checkbox {text : 'add watermark'},
+                            }
+                            footageGrp: Group{
+                                orientation: 'row',
+                                btnSelectTCFolder : Button {text : 'Scan Folders'},
+                                }  
+                            }
                     stackMethodGrp :Group {
                             orientation: 'stack',
                             alignChildren: ['fill','fill'],
                                 timeMethodGrp: Group {
                                 orientation: 'column',
                                 alignChildren: ['fill','fill'],
-                                    impSettingsMethodGrp : Panel {
-                                     text: 'Import Settings',
-                                     orientation: 'column',
-                                     alignChildren: ['fill', 'fill'],
-                                     ddlSelectMethod: DropDownList { properties: {items : ['IMPORT FOOTAGE WITHOUT PRECOMPOSING', ' WATCH IN EXISTING PRECOMPS ONLY', 'IMPORT FOOTAGE AND PRECOMPOSE']}},
-                                     precompGrp : Group{
-                                        orientation: 'row',
-                                        alignChildren: ['fill', 'center'],
-                                        stxRef : StaticText  {text: "Precomps Name"},
-                                        etxName : EditText  {text : "SHOT"},
-                                        cbWatermark : Checkbox {text : 'add watermark'},
-                                        }
-                                        footageGrp: Group{
-                                            orientation: 'row',
-                                            btnSelectTCFolder : Button {text : 'Scan Folders'},
-                                            }  
-                                        }
-                                        
                                     DurationGrp : Panel {
                                      text: 'Conformation by duration Settings',
                                      orientation: 'row',
@@ -104,12 +103,6 @@
                            DetectMethodGrp: Group {
                                 orientation: 'column',
                                  alignChildren: ['fill','fill'],
-                                  aeFolderGrp : Panel {
-                                  text: 'AE sources Folder',
-                                  orientation: 'row',
-                                    stxAeFolder : StaticText  {text: "Folder in Project"},
-                                    ddlAeFolder: DropDownList { alignment: ['fill','fill'], properties: {items : ['NONE']}},
-                                    }
                                  DigicutGrp : Panel {
                                   text: 'Digicut Layer',
                                   orientation: 'row',
@@ -263,7 +256,6 @@
                     sequence.fileFolder =  currentFrameFolder ;
                     sequence.fileExtension = currrentFileExt;
                     sequence.firstFile = memoryFirstFile;
-                    //sequence.date = new Date().FormatDate(memoryFirstFile);
                     sequencesListArray.push (sequence);
 
                     if (i <( listFiles.length-3)) {
@@ -774,126 +766,84 @@
                 return 0;
                 }
             }
+        
+     function conformLayerWithPrecomp (index , compProperty, footageInProject, method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam){
+            var boolImportedPrecomps =false;
+            var boolGeneratedPrecomps =false;
+            var boolIncrement = false;
+            var currentLayerFrameRate = app.project.activeItem.layer(index).source.frameRate;          
+            var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(index));
+            
+             var precompAlreadyImported =false;
+             
+             var footageInCompOut = footageInCompTC[0] + (footageInCompTC[2]*currentLayerFrameRate); // force the outpoint because of timeremap values conflict
+             if (( compProperty.tcIn <= footageInCompTC[0] )&& (compProperty.tcOut >= footageInCompOut ) ){
+                for (var k=0; k<compProperty.layersArray.length; k++) {
+                    var targetInPoint = parseFloat (compProperty.layersArray[k]);
+                    if (targetInPoint.toFixed(2)  == app.project.activeItem.layer(index).inPoint.toFixed(2) ) {
+                        precompAlreadyImported = true;
+                        var confoReturn = {};
+                        confoReturn.boolImportedPrecomps = boolImportedPrecomps;
+                        confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
+                        confoReturn.boolIncrement= boolIncrement;
+                        return confoReturn
+                        }
+                    }
+                if (precompAlreadyImported == false){
+                  
+                    var newFootage= app.project.itemByID(compProperty.id);
+                     if (newFootage){ 
+                        var newLayer =app.project.activeItem.layers.add(newFootage);
+                        newLayer.label = 11;
+                        boolIncrement = true;  
+                        index +=1;//new layer added on the top of the composition so increment i
+                        copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC [0], footageInCompTC[3],footageInCompTC[2], newLayer, compProperty.tcIn, boolsParam, method ,handlesParam.handleIn); 
+                        boolImportedPrecomps =1;
+                        var confoReturn = {};
+                        confoReturn.boolImportedPrecomps = boolImportedPrecomps;
+                        confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
+                        confoReturn.boolIncrement= boolIncrement;
+                        return confoReturn
+                        newLayer.selected = false;
+                        }
+                    }
+                }
+            }
      
-     function conformLayerbyTime (index , footageInProject, method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray){
+     function conformLayerWithFootage (index , footageInProject, method, newLayerName, targetSequence, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray){
             
             var boolItemsImported =false;
             var boolImportedPrecomps =false;
             var boolGeneratedPrecomps =false;
             var boolIncrement = false;
-            
-           var currentLayerFrameRate = app.project.activeItem.layer(index).source.frameRate;
-             if ((app.project.activeItem.layer(index).name.indexOf (newLayerName.toString() ) != -1)||
-             (app.project.activeItem.layer(index).name.indexOf (precompsName.toString())!=-1)||
-             (app.project.activeItem.layer(index).name.indexOf ("Solid") !=-1)){
-                   var confoReturn = {};
-                                confoReturn.compsArray = compsArray;
-                                confoReturn.boolImportedPrecomps = boolImportedPrecomps;
-                                confoReturn.boolImportedItems =boolItemsImported ;
-                                confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
-                                confoReturn.boolIncrement= boolIncrement;
-                                return confoReturn
-                                }   // be sur that  layer (index) is not a conformed layer or a solid 
-                            
-             var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(index));
-             var foundInPrecompList =0;
-             var precompAlreadyImported =false;
-             if (methodmatricule != 0 ){     // Precomps method if activated
-                 //search if the footage is present in the existing precomps
-                 for (var j=1; j < compsArray.length;j++){
-                     var footageInCompOut = footageInCompTC[0] + (footageInCompTC[2]*currentLayerFrameRate); // force the outpoint because of timeremap values conflict
-                     if (( compsArray[j].tcIn <= footageInCompTC[0] )&& (compsArray[j].tcOut >= footageInCompOut ) ){
-                        for (var k=0; k<compsArray[j].layersArray.length; k++) {
-                            var targetInPoint = parseFloat (compsArray[j].layersArray[k]);
-                            if (targetInPoint.toFixed(2)  == app.project.activeItem.layer(index).inPoint.toFixed(2) ) {
-                                precompAlreadyImported = true;
-                                foundInPrecompList = 1;
-                                var confoReturn = {};
-                                confoReturn.compsArray = compsArray;
-                                confoReturn.boolImportedPrecomps = boolImportedPrecomps;
-                                confoReturn.boolImportedItems =boolItemsImported ;
-                                confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
-                                confoReturn.boolIncrement= boolIncrement;
-                                return confoReturn
-                                }
-                            }
-                        if ( foundInPrecompList == 1){
-                             var confoReturn = {};
-                            confoReturn.compsArray = compsArray;
-                            confoReturn.boolImportedPrecomps = boolImportedPrecomps;
-                            confoReturn.boolImportedItems =boolItemsImported ;
-                            confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
-                            confoReturn.boolIncrement= boolIncrement;
-                            return confoReturn
-                            }
-                        if (precompAlreadyImported == false){
-                          
-                            var newFootage= app.project.itemByID(compsArray[j].id);
-                             if (newFootage){ 
-                                var newLayer =app.project.activeItem.layers.add(newFootage);
-                                newLayer.label = 11;
-                                boolIncrement = true;  
-                                index +=1;//new layer added on the top of the composition so increment i
-                                copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC [0], footageInCompTC[3],footageInCompTC[2], newLayer, compsArray[j].tcIn, boolsParam, method ,handlesParam.handleIn); 
-                                foundInPrecompList =1;
-                                boolImportedPrecomps =1;
-                                var confoReturn = {};
-                                confoReturn.compsArray = compsArray;
-                                confoReturn.boolImportedPrecomps = boolImportedPrecomps;
-                                confoReturn.boolImportedItems =boolItemsImported ;
-                                confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
-                                confoReturn.boolIncrement= boolIncrement;
-                                return confoReturn
-                                newLayer.selected = false;
-                                }
-                            }
-                        }
-                     }
-                 }
-             if (!targetSequences) {
-                 alert ("select a source Folder"); 
-                  var confoReturn = {};
-                    confoReturn.compsArray = compsArray;
-                    confoReturn.boolImportedPrecomps = boolImportedPrecomps;
-                    confoReturn.boolImportedItems =boolItemsImported ;
-                    confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
-                    confoReturn.boolIncrement= boolIncrement;
-                    return confoReturn
-            };
-             if ((targetSequences !=null)&&
-                (precompAlreadyImported == false)&&
-                (methodmatricule !=1) ){
-                var boolTimeRemap = false;
-                if (app.project.activeItem.layer(index).timeRemapEnabled) {
-                        boolTimeRemap =true;
-                        }   
-                var sourceFile = getCleanLayerSourceFile (app.project.activeItem.layer(index));    
-                for (var j =1; j < targetSequences.length; j++) {  
-                    var compareFootage = checkMergedFootages (targetSequences[j].reelName, sourceFile, targetSequences[j].tcIn, footageInCompTC[0], targetSequences[j].tcOut, footageInCompTC[1], footageInCompTC[2], method, boolTimeRemap, currentLayerFrameRate, handlesParam.handleIn, handlesParam.handleOut, handlesParam.handlesFbool);                                                                                                             
-                    if ( compareFootage === true) { 
-                        var importExternalFootage = importSequenceFiles (targetSequences[j].firstFile,targetSequences[j].reelName,footageInProject ); //check if the file already in project 's footage  
-                        var newLayer = app.project.activeItem.layers.add (importExternalFootage);  //input item in the composition
-                        
-                        importExternalFootage.parentFolder =footageFolder ;
-                        newLayer.name = newLayer.name + newLayerName.toString();
-                        boolItemsImported = true; //increment var number of imported items
-                        boolIncrement = true;   // for the parent function
-                        index +=1;//new layer added on the top of the composition so increment index
-                        if  (panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.ddlSelectMethod.selection !=0) {
-                            var newPrecomp =    precomposeNewLayer (compsArray,app.project.activeItem.layer(index), precompsName,precompsFolder) ;
-                            newLayer.name =  newPrecomp[0].name;
-                            boolGeneratedPrecomps  = true;
-                            compsArray.splice (0, 1, newPrecomp[1]);
-                            compsArray.push (newPrecomp[0]);
-                            }
-                        newLayer.label = 11;
-                        copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC[0], footageInCompTC[3], footageInCompTC[2],newLayer, targetSequences[j].tcIn, boolsParam, method, handlesParam.handleIn);
-                        }
-                    } 
+            var currentLayerFrameRate = app.project.activeItem.layer(index).source.frameRate;          
+            var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(index));
+            var boolTimeRemap = false;
+            if (app.project.activeItem.layer(index).timeRemapEnabled) {
+                    boolTimeRemap =true;
+                    }   
+            var sourceFile = getCleanLayerSourceFile (app.project.activeItem.layer(index));    
+            var compareFootage = checkMergedFootages (targetSequence.reelName, sourceFile, targetSequence.tcIn, footageInCompTC[0], targetSequence.tcOut, footageInCompTC[1], footageInCompTC[2], method, boolTimeRemap, currentLayerFrameRate, handlesParam.handleIn, handlesParam.handleOut, handlesParam.handlesFbool);                                                                                                             
+            if ( compareFootage === true) { 
+                var importExternalFootage = importSequenceFiles (targetSequence.firstFile,targetSequence.reelName,footageInProject ); //check if the file already in project 's footage  
+                var newLayer = app.project.activeItem.layers.add (importExternalFootage);  //input item in the composition  
+                importExternalFootage.parentFolder =footageFolder ;
+                newLayer.name = newLayer.name + newLayerName.toString();
+                boolItemsImported = true; //increment var number of imported items
+                boolIncrement = true;   // for the parent function
+                index +=1;//new layer added on the top of the composition so increment index
+                if  (panel.grp.MainGrp.impSettingsMethodGrp.ddlSelectMethod.selection !=0) {
+                    var newPrecomp =    precomposeNewLayer (compsArray,app.project.activeItem.layer(index), precompsName,precompsFolder) ;
+                    newLayer.name =  newPrecomp[0].name;
+                    boolGeneratedPrecomps  = true;
+                    compsArray.splice (0, 1, newPrecomp[1]);
+                    compsArray.push (newPrecomp[0]);
+                    }
+                newLayer.label = 11;
+                copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC[0], footageInCompTC[3], footageInCompTC[2],newLayer, targetSequence.tcIn, boolsParam, method, handlesParam.handleIn);
                 }
             var confoReturn = {};
             confoReturn.compsArray = compsArray;
-            confoReturn.boolImportedPrecomps = boolImportedPrecomps;
             confoReturn.boolImportedItems =boolItemsImported ;
             confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
             confoReturn.boolIncrement= boolIncrement;
@@ -904,48 +854,48 @@
     * apply conform by timecode method /return void
     */
     function conformByTime ( method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule){
-
+        
+         if (!targetSequences && methodmatricule !=1 ) {alert ("select a source Folder"); return };
         // var for the ending result
         var numItemsImported =0;
         var numImportedPrecomps =0;
         var numGeneratedPrecomps =0;
         
         //For the genereted precomps array
-        var compsArray =[];
-        if (methodmatricule !=0) {     //list precomp if precomp method by precomp on generate precomps is On.
-            compsArray = getPrecompsList (precompsName.toString());
-            }
+        var compsArray =[];   //list precomp if precomp method by precomp on generate precomps is On.
+        if (methodmatricule !=0) {  compsArray = getPrecompsList (precompsName.toString());}
+        
         var footageInProject =searchFootageFilesInProject();
-        for (var i =app.project.activeItem.numLayers ; i >0 ; i --) { //STARTING SCAN OF EACH COMP ITEMS
-           var conform = conformLayerbyTime (i ,footageInProject,method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray);
-             
-           if (methodmatricule !=0){
-                 var tempArray  =[];
-                try{
-                     tempArray = conform.compsArray;
+        for (var i =app.project.activeItem.numLayers ; i >0 ; i --) { //STARTING  OF EACH COMP ITEMS
+            var activeLayerName = app.project.activeItem.layer(i).name;
+            //be sur that  layer (index) is not a conformed layer or a solid
+             if ((activeLayerName.indexOf (newLayerName.toString() ) != -1)||(activeLayerName.indexOf (precompsName.toString())!=-1)||(activeLayerName.indexOf ("Solid") !=-1)){continue}
+             var boolFoundInPrecomps = false;
+             if (methodmatricule !=0) {
+                
+                 for (var j = 1; j<  compsArray.length ;  j++) {
+                    var conform = conformLayerWithPrecomp (i , compsArray[j], footageInProject, method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam);
+                     if (conform.boolImportedPrecomps == true) {numImportedPrecomps +=1;}
+                   if (conform.boolGeneratedPrecomps == true) {numGeneratedPrecomps +=1; }
+                   if (conform.boolIncrement == true) {
+                       i +=1;
+                       boolFoundInPrecomps = true;
+                       }
+                     }
+                 }
+            if (boolFoundInPrecomps == false &&  (methodmatricule !=1) )
+            {
+                for (var j =1; j < targetSequences.length; j++) {
+                      var conform = conformLayerWithFootage (i ,footageInProject,method, newLayerName, targetSequences[j], precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray);
+                       if (methodmatricule !=0){
+                            compsArray  = conform.compsArray;
+                            }
+                        
+                       if (conform.boolImportedItems == true) {numItemsImported +=1; }
+                       if (conform.boolGeneratedPrecomps == true) {  numGeneratedPrecomps +=1;}
+                       if (conform.boolIncrement == true) { i +=1;}
                     }
-                catch(e) {
-                    tempArray =compsArray  ;
-                    compsArray = tempArray;
-                    }
-                }
-               
-           if (conform.boolImportedPrecomps == true) {
-
-               numImportedPrecomps +=1;
-               }
-           if (conform.boolImportedItems == true) {
-
-               numItemsImported +=1;
-               }
-           if (conform.boolGeneratedPrecomps == true) {
-
-               numGeneratedPrecomps +=1;
-               }
-           if (conform.boolIncrement == true) {
-               i +=1;
-               }
-                 
+                } 
             }
         alert (numItemsImported + " files imported, "+numGeneratedPrecomps + " generated precomps, "+  numImportedPrecomps + " imported precomps" );
         }
@@ -1060,147 +1010,70 @@
         return [rgb, luma]
         }
 
- 	function applyDetection (layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray, folderIndex,folderItemsList,layerRefIn, layerRefOut){
+ 	function applyDetection (conformParam, layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray, folderIndex,folderItemsList,layerRefIn, layerRefOut){
+        
+        // var for the ending result
+        var numItemsImported =0;
+        var numImportedPrecomps =0;
+        var numGeneratedPrecomps =0;
+        var numSafeConform = 0;
+        var numUnsafeConform =0;
+        
         var layerRefList =  getLayerRefList(layerRefIn,layerRefOut);
-        //value for reccurrent preset like handless
-        var valueReferences = {}
-        valueReferences.handles = 25;
-        var tempWindow = new Window('palette');
-        tempWindow.info = tempWindow.add("staticText",[0,0,200,50], "Calculating");
-        tempWindow.progressScan = tempWindow.add("progressBar", undefined, 0,  layerRefList.length*folderItemsList.length);
-        tempWindow.progressScan.preferredSize.width = 300;
-        tempWindow.show();
-    
-        for (var i =0; i < layerRefList.length; i++)
-           {
-
-                for (var j=0; j<folderItemsList.length; j++)
-                {
-                    tempWindow .progressScan.value = (i+1)*(j+1);
-                    sampleFxArray[3][0].setValue(0);
-                    sampleFxArray[3][2].setValue(100);
-                    sampleFxArray[3][1].setValue([activeComp.width/2,activeComp.height/2]);
-                    
-                    if ((timeWarpbool == false) && (folderItemsList[j].duration < layerRefList[i].originalDuration))
-                    {
-                       j++;
-                    }
-                    else
-                    {
-                        layerValid = false;
-                        testLayer = activeComp.layers.add(app.project.itemByID(folderItemsList[j].id));
-                        testLayer.moveAfter(activeComp.layer(2)); //Keep SampleFx layer on the top
-                        referenceLayerIndex =   layerRefList[i].originalIndex+1;
-                        testLayer.startTime = layerRefList[i].originalInPoint;
+        //param copy settings 
+        var  boolsParam = {};
+        boolsParam.boolTimeWarp = panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.SettingsGrp.cbTimeWarp.value;
+        //in this method we force those param to be true
+        boolsParam.boolOpacity = true;
+        boolsParam.boolFitToComp = true;
+        boolsParam.boolTransform = true; 
+         //handles settings
+        var handlesParam = {};
+        handlesParam.handleIn = parseInt(app.project.activeItem.frameRate);
+        handlesParam.handleOut = parseInt(app.project.activeItem.frameRate);
+        handlesParam.handlesFbool = true;
+            
+        var footageInProject =searchFootageFilesInProject();
+        var compsArray =[];
+         if (methodmatricule !=0) {  compsArray = getPrecompsList (precompsName.toString());}
+          var boolFoundInPrecomps = false;
+          if (boolFoundInPrecomps == false &&  (methodmatricule !=1) ) {
+              
+                for (var i =0; i < layerRefList.length; i++){
+                    for (var j =1; j < targetSequences.length; j++) {
+                        //step one try conforming by timecode param only
+                        var conform = conformLayerbyTime (layerRefList[i].index ,conformParam.footageInProject, 0, conformParam.newLayerName, conformParam.targetSequences, conformParam.precompsFolder , conformParam.precompsName, boolsParam, conformParam.footageFolder, handlesParam, conformParam.methodmatricule, compsArray);
                         
-                        //Call Analys   //return [sampleFx,     paramLayerTwo   Adress,layerOneProp,    layerTwoProp,   lumaAdress, colorsAdress, cbRefreshAdress]
-                 
-                         var returnanalysStepOne = callAnalys (sampleFxArray);
-                         
-                         //SI VALIDER
-                           if ( returnanalysStepOne[0] <=maxDiff )
-                           {
-                               alert ("plan trouvé");
-                               layerValid = true;
-                               i++
-                           }
-                         
-                         //SINON FIT TO DIGICUT SIZE
-                         var testSize = (activeComp.layer( layerdigicutIndex+1).width/testLayer.width)*100;
-                         sampleFxArray[3][2].setValue(testSize);  //access to the sampleFX param to resize the layer 2
-                           var returnanalysStepTwo = callAnalys (sampleFxArray);
-                           if ( returnanalysStepTwo[0] <= maxDiff )
-                           {
-                               alert ("plan trouvé");
-                               layerValid = true;
-                               i++
-                           }
-                            
-                            else if (returnanalysStepTwo[1] < 0.050 ) // luma diff limit   
-                            {
-                                var ArrayTimesOffsetToTest = [];
-                                if ( folderItemsList[j].duration-(valueReferences.handles*2/25) >= layerRefList[i].originalDuration)
-                                {
-                                        ArrayTimesOffsetToTest.push(valueReferences.handles);
-                                }
-                                var timeMini = -25*(folderItemsList[j].duration-layerRefList[i].originalDuration);
-                                var timeMaxi = 25*(folderItemsList[j].duration-layerRefList[i].originalDuration);
-                                for (var k=timeMini ; k<=  timeMaxi; k++) 
-                                {
-                                     ArrayTimesOffsetToTest.push(k);   
-                                }
-
-                                //SCALE ARRAYOF POSSIBILITIES
-                                var scalePrecision = 1;  
-                                var minScale = parseFloat( ( sampleFxArray[3][2].value - parseFloat ( sampleFxArray[3][2].value*MaxAround/100))/ scalePrecision); 
-                                var maxScale = parseFloat (( sampleFxArray[3][2].value + parseFloat ( sampleFxArray[3][2].value*MaxAround/100))/ scalePrecision);
-                                var ArrayScaleValues =[];
-                                for (var k= maxScale; k>minScale; k--)
-                                { 
-                                     ArrayScaleValues.push (k* scalePrecision);
-                                }
-
-                                //POSITION ARRAY OF POSSIBILITES
-                                 var positionPrecision = 1;
-                                 var minPosX =    ( sampleFxArray[3][1].value[0] - parseFloat ( sampleFxArray[3][1].value[0]*0.5*MaxAround/100))/ positionPrecision; 
-                                 var maxPosX =   ( sampleFxArray[3][1].value[0] + parseFloat ( sampleFxArray[3][1].value[0]*0.5*MaxAround/100))/ positionPrecision; 
-                                 var posXArray =[];
-                                  for (var k= maxPosX ; k>minPosX; k--)
-                                {
-                                     posXArray.push (k*positionPrecision);
-                                }
-
-                                 var minPosY =    (sampleFxArray[3][1].value[1] - parseFloat (sampleFxArray[3][1].value[1]*0.5*MaxAround/100))/ positionPrecision; 
-                                 var maxPosY =  (sampleFxArray[3][1].value[1] + parseFloat (sampleFxArray[3][1].value[1]*0.5*MaxAround/100))/ positionPrecision;
-                                 var posYArray =[];
-                                 for (var k= maxPosY ; k>minPosY; k--)
-                                {
-                                      posYArray.push (k*positionPrecision);
-                                }
-                                //TO DO TO GO FASTER
-                                // ANALYSE  T OFFSET  25   T OFFSET 0  TMIN    TMAX
-                                //ANALYSE SCALE FIT --   100%  -- LAYER REF (SCALE*
-                                //ANALYS POS  POS INI     POSXMINPOSYINI    POSXINIPOSYMIN   POSXMINPOSYMIN 
-                                
-
-                                for (var k=0; k< ArrayTimesOffsetToTest.length; k++)  //loop with  timeoffset possibilites array
-                                {
-                                    for (var L=0; L<ArrayScaleValues.length; L++) //loop with  scale possibilites array
-                                    {
-                                        for (var m=0; m <posXArray.length ; m++)   //loop with y possibilites
-                                        {
-                                            for (var n=0; n<posYArray.length; n++)  //loop with x possibilites).
-                                            {
-                                                 sampleFxArray[3][0].setValue(ArrayTimesOffsetToTest[k]);
-                                                 sampleFxArray[3][2].setValue(ArrayScaleValues[L]);
-                                                 sampleFxArray[3][1].setValue([posXArray[n],posYArray[m]]);
-                                                  tempWindow.info = tempWindow.add("staticText",[0,0,200,50], "time offset: "+ArrayTimesOffsetToTest[k]+"   scale value: "+ArrayScaleValues[L]+"    position: "+posXArray[n]+":"+posYArray[m]);
-                                                 var returnanalysStepThree = callAnalys (sampleFxArray);
-                                                   if ( returnanalysStepThree[0] <= maxDiff )
-                                                   {
-                                                       alert ("plan trouvé");
-                                                       layerValid = true;
-                                                       activeComp.layer(2).inPoint += k;
-                                                       activeComp.layer(2).scale= L/scalePrecision;
-                                                       activeComp.layer(2).position[0]= m;
-                                                       activeComp.layer(2).position[1]= n;
-                                                       i++
-                                                   }
-                                            }
-                                        }
-                                    }
-                                }
                             }
-                               
-                            if (layerValid ==false)
-                            {
-                                activeComp.layer(2).remove()
-                                 j++;
+                        if (conform.boolIncrement == true) { 
+                            activeComp.layer(1).moveAfter(activeComp.layer(2)); //Keep SampleFx layer on the top
+                            sampleFxArray[3][0].setValue(0);
+                            sampleFxArray[3][2].setValue(100);
+                            sampleFxArray[3][1].setValue([activeComp.width/2,activeComp.height/2]);
+                            var returnanalysStepOne = callAnalys (sampleFxArray);
+                         
+                             //SI VALIDER
+                               if ( returnanalysStepOne[0] <=maxDiff ) {
+                                   alert ("plan trouvé");
+                                   layerValid = true;
+                                    i +=1;
+                                    if (methodmatricule !=0){
+                                    compsArray  = conform.compsArray;
+                                    if (conform.boolImportedItems == true) {numItemsImported +=1; }
+                                    if (conform.boolGeneratedPrecomps == true) {  numGeneratedPrecomps +=1;}
+                               }
+                           //SI NON VALIDE
+                                     // SI diff > 0.050 supprimer l'élément et le retirer de la list des compositions
+                                     //sinon faire les differents test sur la premiere frame
+                                                    // si timewarp     framefina - framIni > (targetduration/2)
+                                                    // si pas timewarp framefina - frameIni >= targetDuration
+                                           //si un resultat est inferieur à 0.010 --->valid
+                                           // si toujours entre 0.010 et 0.020 mettre un avertissement couleur et mettre dans pas fiable
+                            /// si au final toujours >0.020 supprimer l'élément et le retirer de la list des compositions
                             }
-                      }
-                       
+                        }
+                    }
                 } 
-           }
  		}
      /**
  	}
@@ -1210,7 +1083,7 @@
     function callbackUI(panel) {
         //default
         panel.grp. MainGrp.MethodeGrp.rbOnlyTc.value = 1;
-        panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.ddlSelectMethod.selection = 2;
+        panel.grp.MainGrp.impSettingsMethodGrp.ddlSelectMethod.selection = 2;
         if (app.project.activeItem)
         {
             panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.etxHandleIn.text = app.project.activeItem.frameRate.toString();  
@@ -1221,8 +1094,8 @@
         var newLayerName = "_CONFO_TC";
         //stack
         panel.grp. MainGrp.MethodeGrp.rbOnlyTc.onClick= function() {
-              panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.visible = true;
-              panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.visible = false;
+            panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.visible = true;
+            panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.visible = false;
             panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.etxHandleIn.enabled= false;
             panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.stxHandleIn.enabled= false;
             panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.etxHandleOut.enabled = false;
@@ -1251,7 +1124,6 @@
         panel.grp. MainGrp.MethodeGrp.rbAutomatic.onClick= function() {
              panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.visible = false;
              panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.visible = true;
-
              }
 
         panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.etxHandleIn.enabled= false;
@@ -1263,8 +1135,6 @@
         panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.visible = true;
         panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.visible = false;
             
-
-        var folderSourceddl = panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.aeFolderGrp.ddlAeFolder;
         var digicutddl =         panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.DigicutGrp.ddlDigicut;
         var LayerInddl=    panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.layerRefGrp.ddlInputLayer;
         var LayerOutddl=    panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.layerRefGrp.ddlOutputLayer;
@@ -1274,20 +1144,18 @@
         panel.grp.MainGrp.BtnGrp.btnRefresh.onClick = function(){
             refreshDdls (folderSourceddl, digicutddl, LayerInddl, LayerOutddl);
             }
-
-        panel.grp. MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.footageGrp.btnSelectTCFolder.onClick = function (){
+        var targetSequences = [];
+        panel.grp. MainGrp.impSettingsMethodGrp.footageGrp.btnSelectTCFolder.onClick = function (){
 
            var targetFolder = Folder.selectDialog('Select Folder Containing Footage to Conform');
            var filterArray = [".dpx",".tga",".tiff",".exr",".png",".psd",".ai"];
-          
-           
            targetSequences = listSequencesInFolders(targetFolder ,filterArray);
            return targetSequences;
            }
        
        
         panel.grp.MainGrp.BtnGrp.btnStart.onClick = function(){
-            var precompsName = panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.precompGrp.etxName.text;
+            var precompsName = panel.grp.MainGrp.impSettingsMethodGrp.precompGrp.etxName.text;
             if (!(app.project.activeItem instanceof CompItem)){
                 alert ("Open a Composition");
                 return
@@ -1308,14 +1176,11 @@
             handlesParam.handlesFbool = panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.DurationGrp.cbFixedHandles.value;
 
 
-            var methodmatricule = panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.ddlSelectMethod.selection;
+            var methodmatricule = panel.grp.MainGrp.impSettingsMethodGrp.ddlSelectMethod.selection;
             //folders to stock footages and precomps
             var footageFolder = findFolderWithName ("FOOTAGE_CONFO_TC",true);
             var precompsFolder =findFolderWithName (precompsName,true);
            
-
-            
-
             app.beginUndoGroup ("Import"); //begin undo Group
             var fxName = "tl_Fast_Sample";
             var method  = checkMethodSync ();
@@ -1333,7 +1198,7 @@
                 //Max Value  &&   MAx Around
                 var maxDiff = parseFloat (panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.DetectRefGrp.txlimitDiff.text)/1000;
                 var MaxAround = parseInt (panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.DetectRefGrp.txlimitAnalys.text);
-                var timeWarpbool = panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.DetectRefGrp.cbTwarp.value; 
+                var booltimeWarp = panel.grp.MainGrp.stackMethodGrp.DetectMethodGrp.DetectRefGrp.cbTwarp.value; 
                 //add sampleFx  layer
                 var activeComp = app.project.activeItem;
                 var sampleFxArray = addSampleFx (activeComp, fxName, layerdigicutIndex);      
@@ -1344,6 +1209,15 @@
                 var layerRefIn= parseInt (LayerInddl.selection) +1;   //increment because we'll add  fx layer
                 var layerRefOut=  parseInt (LayerOutddl.selection)+1 ;   //increment because we'll add  fx layer
                 
+                conformParam = {};
+                conformParam.newLayerName =newLayerName;
+                conformParam.targetSequences =  targetSequences;
+                conformParam.precompsFolder = precompsFolder;
+                conformParam.precompsName = precompsName;
+                conformParam.footageFolder = footageFolder;
+                conformParam.methodmatricule = methodmatricule;
+                
+                
                 if (layerRefIn > layerRefOut)
                 {
                     var tempon =  layerRefIn;
@@ -1352,20 +1226,16 @@
                     tempon.delete;
                 }
                
-                applyDetection (layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray, folderIndex,folderItemsList,layerRefIn, layerRefOut);
-
-               
-             	activeComp.layer(1).remove()   // delete sampleFxArray
+                applyDetection (conformParam, layerdigicutIndex, maxDiff,MaxAround,booltimeWarp, activeComp, sampleFxArray, folderIndex,folderItemsList,layerRefIn, layerRefOut);
+                activeComp.layer(1).remove()   // delete sampleFxArray
             }
            
             else
             {
-
- 
                 conformByTime (method, newLayerName, targetSequences,precompsFolder , precompsName,boolsParam, footageFolder, handlesParam, methodmatricule);
                
             }
-             var boolShot = panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.precompGrp.cbWatermark.value;
+             var boolShot = panel.grp.MainGrp.impSettingsMethodGrp.precompGrp.cbWatermark.value;
             if (boolShot == true)
             {
 
