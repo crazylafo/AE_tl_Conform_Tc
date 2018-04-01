@@ -777,15 +777,25 @@
      
      function conformLayerbyTime (index , footageInProject, method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray){
             
-            var i = index;
             var boolItemsImported =false;
             var boolImportedPrecomps =false;
             var boolGeneratedPrecomps =false;
             var boolIncrement = false;
             
-           var currentLayerFrameRate = app.project.activeItem.layer(i).source.frameRate;
-             if ((app.project.activeItem.layer(i).name.indexOf (newLayerName.toString() ) != -1)||(app.project.activeItem.layer(i).name.indexOf (precompsName.toString())!=-1)|| (app.project.activeItem.layer(i).name.indexOf ("Solid") !=-1)){return}   // be sur that  layer (i) is not a conformed layer or a solid 
-             var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(i));
+           var currentLayerFrameRate = app.project.activeItem.layer(index).source.frameRate;
+             if ((app.project.activeItem.layer(index).name.indexOf (newLayerName.toString() ) != -1)||
+             (app.project.activeItem.layer(index).name.indexOf (precompsName.toString())!=-1)||
+             (app.project.activeItem.layer(index).name.indexOf ("Solid") !=-1)){
+                   var confoReturn = {};
+                                confoReturn.compsArray = compsArray;
+                                confoReturn.boolImportedPrecomps = boolImportedPrecomps;
+                                confoReturn.boolImportedItems =boolItemsImported ;
+                                confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
+                                confoReturn.boolIncrement= boolIncrement;
+                                return confoReturn
+                                }   // be sur that  layer (index) is not a conformed layer or a solid 
+                            
+             var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(index));
              var foundInPrecompList =0;
              var precompAlreadyImported =false;
              if (methodmatricule != 0 ){     // Precomps method if activated
@@ -795,7 +805,7 @@
                      if (( compsArray[j].tcIn <= footageInCompTC[0] )&& (compsArray[j].tcOut >= footageInCompOut ) ){
                         for (var k=0; k<compsArray[j].layersArray.length; k++) {
                             var targetInPoint = parseFloat (compsArray[j].layersArray[k]);
-                            if (targetInPoint.toFixed(2)  == app.project.activeItem.layer(i).inPoint.toFixed(2) ) {
+                            if (targetInPoint.toFixed(2)  == app.project.activeItem.layer(index).inPoint.toFixed(2) ) {
                                 precompAlreadyImported = true;
                                 foundInPrecompList = 1;
                                 var confoReturn = {};
@@ -808,7 +818,13 @@
                                 }
                             }
                         if ( foundInPrecompList == 1){
-                            return;
+                             var confoReturn = {};
+                            confoReturn.compsArray = compsArray;
+                            confoReturn.boolImportedPrecomps = boolImportedPrecomps;
+                            confoReturn.boolImportedItems =boolItemsImported ;
+                            confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
+                            confoReturn.boolIncrement= boolIncrement;
+                            return confoReturn
                             }
                         if (precompAlreadyImported == false){
                           
@@ -817,16 +833,17 @@
                                 var newLayer =app.project.activeItem.layers.add(newFootage);
                                 newLayer.label = 11;
                                 boolIncrement = true;  
-                                i =i+1;//new layer added on the top of the composition so increment i
-                                try {
-                                    copyLayerProperties(app.project.activeItem.layer(i), footageInCompTC [0], footageInCompTC[3],footageInCompTC[2], newLayer, compsArray[j].tcIn, boolsParam, method ,handlesParam.handleIn); 
-                                    foundInPrecompList =1;
-                                    boolImportedPrecomps =1;
-                                    return;
-                                    }
-                                catch (e) {
-                                    continue;
-                                    }
+                                index +=1;//new layer added on the top of the composition so increment i
+                                copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC [0], footageInCompTC[3],footageInCompTC[2], newLayer, compsArray[j].tcIn, boolsParam, method ,handlesParam.handleIn); 
+                                foundInPrecompList =1;
+                                boolImportedPrecomps =1;
+                                var confoReturn = {};
+                                confoReturn.compsArray = compsArray;
+                                confoReturn.boolImportedPrecomps = boolImportedPrecomps;
+                                confoReturn.boolImportedItems =boolItemsImported ;
+                                confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
+                                confoReturn.boolIncrement= boolIncrement;
+                                return confoReturn
                                 newLayer.selected = false;
                                 }
                             }
@@ -847,10 +864,10 @@
                 (precompAlreadyImported == false)&&
                 (methodmatricule !=1) ){
                 var boolTimeRemap = false;
-                if (app.project.activeItem.layer(i).timeRemapEnabled) {
+                if (app.project.activeItem.layer(index).timeRemapEnabled) {
                         boolTimeRemap =true;
                         }   
-                var sourceFile = getCleanLayerSourceFile (app.project.activeItem.layer(i));    
+                var sourceFile = getCleanLayerSourceFile (app.project.activeItem.layer(index));    
                 for (var j =1; j < targetSequences.length; j++) {  
                     var compareFootage = checkMergedFootages (targetSequences[j].reelName, sourceFile, targetSequences[j].tcIn, footageInCompTC[0], targetSequences[j].tcOut, footageInCompTC[1], footageInCompTC[2], method, boolTimeRemap, currentLayerFrameRate, handlesParam.handleIn, handlesParam.handleOut, handlesParam.handlesFbool);                                                                                                             
                     if ( compareFootage === true) { 
@@ -861,16 +878,16 @@
                         newLayer.name = newLayer.name + newLayerName.toString();
                         boolItemsImported = true; //increment var number of imported items
                         boolIncrement = true;   // for the parent function
-                        i = i+1;//new layer added on the top of the composition so increment index
+                        index +=1;//new layer added on the top of the composition so increment index
                         if  (panel.grp.MainGrp.stackMethodGrp.timeMethodGrp.impSettingsMethodGrp.ddlSelectMethod.selection !=0) {
-                            var newPrecomp =    precomposeNewLayer (compsArray,app.project.activeItem.layer(i), precompsName,precompsFolder) ;
+                            var newPrecomp =    precomposeNewLayer (compsArray,app.project.activeItem.layer(index), precompsName,precompsFolder) ;
                             newLayer.name =  newPrecomp[0].name;
                             boolGeneratedPrecomps  = true;
                             compsArray.splice (0, 1, newPrecomp[1]);
                             compsArray.push (newPrecomp[0]);
                             }
                         newLayer.label = 11;
-                        copyLayerProperties(app.project.activeItem.layer(i), footageInCompTC[0], footageInCompTC[3], footageInCompTC[2],newLayer, targetSequences[j].tcIn, boolsParam, method, handlesParam.handleIn);
+                        copyLayerProperties(app.project.activeItem.layer(index), footageInCompTC[0], footageInCompTC[3], footageInCompTC[2],newLayer, targetSequences[j].tcIn, boolsParam, method, handlesParam.handleIn);
                         }
                     } 
                 }
@@ -881,7 +898,7 @@
             confoReturn.boolGeneratedPrecomps = boolGeneratedPrecomps;
             confoReturn.boolIncrement= boolIncrement;
             return confoReturn
-         }
+            }
      /**
     * conformByTime  main function to conform by timecode or duration
     * apply conform by timecode method /return void
@@ -901,8 +918,9 @@
         var footageInProject =searchFootageFilesInProject();
         for (var i =app.project.activeItem.numLayers ; i >0 ; i --) { //STARTING SCAN OF EACH COMP ITEMS
            var conform = conformLayerbyTime (i ,footageInProject,method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule, compsArray);
-            if (methodmatricule !=0){
-                 tempArray  =[]
+             
+           if (methodmatricule !=0){
+                 var tempArray  =[];
                 try{
                      tempArray = conform.compsArray;
                     }
@@ -911,19 +929,20 @@
                     compsArray = tempArray;
                     }
                 }
+               
            if (conform.boolImportedPrecomps == true) {
 
                numImportedPrecomps +=1;
                }
-            if (conform.boolImportedItems == true) {
+           if (conform.boolImportedItems == true) {
 
                numItemsImported +=1;
                }
-            if (conform.boolGeneratedPrecomps == true) {
+           if (conform.boolGeneratedPrecomps == true) {
 
                numGeneratedPrecomps +=1;
                }
-            if (conform.boolIncrement == true) {
+           if (conform.boolIncrement == true) {
                i +=1;
                }
                  
@@ -1042,8 +1061,8 @@
         }
 
  	function applyDetection (layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray, folderIndex,folderItemsList,layerRefIn, layerRefOut){
- 		 var layerRefList =  getLayerRefList(layerRefIn,layerRefOut);
- 		 //value for reccurrent preset like handless
+        var layerRefList =  getLayerRefList(layerRefIn,layerRefOut);
+        //value for reccurrent preset like handless
         var valueReferences = {}
         valueReferences.handles = 25;
         var tempWindow = new Window('palette');
