@@ -345,12 +345,10 @@ function scanFilesWithProgressBar (folder,filter) {
         
         }
     function updateDdlWithNumLayers (ddl)  {
-         if (app.project.activeItem instanceof CompItem)
-        {
+         if (app.project.activeItem instanceof CompItem) {
             for(var i=1;i<=app.project.activeItem.numLayers; i++) {
                 ddl.add("item", i);
                 }
-            
             ddl.slection = 0;
             }
         }
@@ -361,8 +359,7 @@ function scanFilesWithProgressBar (folder,filter) {
     
     
     //Effects management
-        function refreshDdls (folderSourceddl, digicutddl, LayerInddl, LayerOutddl)
-    { 
+    function refreshDdls (folderSourceddl, digicutddl, LayerInddl, LayerOutddl){ 
         cleanDdl (folderSourceddl) ;
         cleanDdl (digicutddl) ;
         cleanDdl (LayerInddl);
@@ -384,4 +381,14 @@ function scanFilesWithProgressBar (folder,filter) {
             }
         }
         return false;
+    }
+    function compareKeyTimes (keyA, keyB){
+
+        var comparison = 0;
+        if (keyA.timeKey> keyB.timeKey) {
+            comparison = 1;
+        } else if (keyA.timeKey < keyB.timeKey) {
+            comparison = -1;
+        }
+        return comparison;
     }
