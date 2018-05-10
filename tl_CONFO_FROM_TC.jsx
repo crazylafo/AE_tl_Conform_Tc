@@ -15,7 +15,7 @@
   @version 1.23 tmewarp and reversemode are compatibles
   @version 1.24 debug functions connexion
   @version 1.241 windows command rewritten for scanfolder and MidiaInfo
-  @version 1.25  Rewritten functions for analysing layers
+  @version 1.25-1.30 Rewritten functions for analysing layers
 */
 
 
@@ -197,13 +197,14 @@
      */
     function getFilesList (folder, filterArray) {
         // first method with terminal
+        var listFiles = [];
             if (system.osName.toString().indexOf("Mac") !=-1)
             {
-              var listFiles = listFilesMacOs (folder,filterArray);
+              listFiles = listFilesMacOs (folder,filterArray);
             }
             else
             {
-               var listFiles = listFilesWinOs (folder,filterArray); 
+               listFiles = listFilesWinOs (folder,filterArray); 
                 /* deprecated method
                 var   filters = makeFilterList (filterArray); 
                 var   listFiles =  scanFilesWithProgressBar(folder, filters);
@@ -218,10 +219,12 @@
     function listSequencesInFolders(folder,filterArray) {
             
             var hasMediaInfo = false;
-             if (system.osName.toString().indexOf("Mac") !=-1)
-            {
-             hasMediaInfo = checkMediaInfoMacOs (folder) ;
+             if (system.osName.toString().indexOf("Mac") !=-1){
+                hasMediaInfo = checkMediaInfoMacOs (folder) ;
             }
+            else{
+                hasMediaInfo = checkMediaInfoWinOs (folder) ;
+                }
             
             listFiles = getFilesList (folder, filterArray);  //list Files in targget folder and organise it
             
@@ -1119,7 +1122,7 @@
 	            }
 	        }
 	    }
- 	function applyDetection (targetSequences, conformParam, layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray,layerRefIn, layerRefOut, methodmatricule,precompsName,newLayerName){
+    function applyDetection (targetSequences, conformParam, layerdigicutIndex, maxDiff,MaxAround,timeWarpbool, activeComp, sampleFxArray,layerRefIn, layerRefOut, methodmatricule,precompsName,newLayerName){
         
         // var for the ending result
         var numItemsImported =0;

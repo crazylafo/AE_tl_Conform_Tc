@@ -104,7 +104,7 @@ function scanFilesWithProgressBar (folder,filter) {
 
 
  //FsName  
-      /**
+ /**
     * @@param {Array}String} 
     * @returns  Array {fsName}
     */
@@ -136,23 +136,30 @@ function scanFilesWithProgressBar (folder,filter) {
         listff = listf.read();
         listFiles =  listff.split(/\r\n|\n/);
         listf.close();
-        system.callSystem('cmd.exe /c del'+fsProjFolder+'\\listSeq.txt');
+        system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listSeq.txt');
         return listFiles;
         }
    function checkMediaInfoWinOs() {
-        var FsNFolder = app.project.file.parent.fsName;
-        var commandTerminal=   'cmd.exe  /c '+FsNFolder+'mediainfo  >>'+FsNFolder+'/test.txt ';
-        system.callSystem(commandTerminal);
-        try
-        {
-             var  testFile= File (FsNFolder  +'/test.txt');
-             system.callSystem ('cmd.exe /c del'+fsProjFolder+'/test.txt');
-            return true
+        var mediaInfoInstalled = false;
+        var thisFile = new File($.fileName);  
+        var basePath = thisFile.parent.fsName; //script location
+        var files = basePath.getFiles();
+        for (var i=0; i<files.length; i++) {
+            var file = files[i];
+            if (file.name === "MediaInfo_CLI" &&file instanceof Folder)
+            {
+                subFiles = file.getFiles();
+                 for (var j=0; i<subFiles.length; i++) {
+                     if (subFiles[j].name ==="Mediainfo.exe") {
+                         mediainfoInstalled = true;
+                         alert (true)
+                         break;
+                    }
+                 break;
+                }
             }
-        catch (e)
-        {
-            return false
-            }
+        }
+        return mediaInfoInstalled
        }
 //terminal MacOs functions
       /**
