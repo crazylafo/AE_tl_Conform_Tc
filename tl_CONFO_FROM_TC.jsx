@@ -152,14 +152,9 @@
     }
 
    
-
-
-   
     function splitFileName(scannedFile){
         if (scannedFile != null) {
             if ($.os.indexOf ("Windows") !=-1){
-
-                scannedFile = scannedFile.fsName;
                 var dot = scannedFile.lastIndexOf(".");
                 var delimitationStr = "\\";
                 var slash = scannedFile.lastIndexOf (delimitationStr);
@@ -223,12 +218,12 @@
                 hasMediaInfo = checkMediaInfoMacOs (folder) ;
             }
             else{
-                hasMediaInfo = checkMediaInfoWinOs (folder) ;
+                hasMediaInfo = checkMediaInfoWinOs () ;
                 }
             
             listFiles = getFilesList (folder, filterArray);  //list Files in targget folder and organise it
             
-            var sequenceNumber  =1; // list number of detected sequences
+            var sequenceNumber  =0; // list number of detected sequences
             var memoryTcIn =0; // temp memory of the first frame of the current sequence
             var memoryFirstFile =""; // temp memory of the first file  of the current sequence
             var sequencesListArray= [];  //array to list class of each sequences
@@ -276,9 +271,14 @@
                 }            
             sequencesListArray.unshift(sequenceNumber);
              
-            if (system.osName.toString().indexOf("Mac") !=-1 && hasMediaInfo == true ){
+            if (hasMediaInfo == true ){
                 var filterMediaArray = [".mov"]; 
-                mediaListArray = cmdListMediasInFolders(folder,filterMediaArray , sequencesListArray[0]);
+                if (system.osName.toString().indexOf("Mac") !=-1){
+                    var mediaListArray = cmdListMediasInFoldersMacOs(folder,filterMediaArray , sequencesListArray[0]);
+                    }
+                else {
+                    var mediaListArray = cmdListMediasInFoldersWinOs(folder,filterMediaArray , sequencesListArray[0]);
+                    }
                 sequencesListArray[0] =  mediaListArray [0];
                 for (var i =1; i<mediaListArray.length; i++){
                     sequencesListArray.push (mediaListArray[i])
@@ -786,7 +786,7 @@
                 }
             }
         
-     function conformLayerWithPrecomp (index , compProperty, footageInProject, method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam){
+     function conformLayerWithPrecomp (index , compProperty, method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam){
             var boolImportedPrecomps =false;
             var boolGeneratedPrecomps =false;
             var boolIncrement = false;
@@ -879,17 +879,20 @@
         var numItemsImported =0;
         var numImportedPrecomps =0;
         var numGeneratedPrecomps =0;
-        
+       var footageInProject =searchFootageFilesInProject();
         //For the genereted precomps array
-        
+        var compsArray =[];
+         if (methodmatricule !=0) {
+                compsArray = getPrecompsList (precompsName.toString());
+                }
         for (var i =app.project.activeItem.numLayers ; i >0 ; i --) { //STARTING  OF EACH COMP ITEMS
             var activeLayerName = app.project.activeItem.layer(i).name;
             //be sur that  layer (index) is not a conformed layer or a solid
              if ((activeLayerName.indexOf (newLayerName.toString() ) != -1)||(activeLayerName.indexOf (precompsName.toString())!=-1)||(activeLayerName.indexOf ("Solid") !=-1)){continue}
              var boolFoundInPrecomps = false;
-             if (methodmatricule !=0) {        
+             if (methodmatricule !=0) {
                  for (var j = 1; j<  compsArray.length ;  j++) {
-                    var conform = conformLayerWithPrecomp (i , compsArray[j], footageInProject, method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam);
+                    var conform = conformLayerWithPrecomp (i , compsArray[j], method, newLayerName,  precompsFolder , precompsName,boolsParam,  handlesParam);
                     if (conform){
                         if (conform.boolImportedPrecomps == true) {numImportedPrecomps +=1;}
                         if (conform.boolGeneratedPrecomps == true) {numGeneratedPrecomps +=1; }

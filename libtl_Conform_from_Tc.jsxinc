@@ -120,20 +120,23 @@ function scanFilesWithProgressBar (folder,filter) {
 //cmd WindowsOs Functions
  function listFilesWinOs (folder,filterArray) {
         var FsNFolder = folder.fsName;
-        var fsProjFolder = app.project.file.parent.fsName;
-        if ( (!fsProjFolder) || fsProjFolder == null) {
+        try{
+            var fsProjFolder = app.project.file.parent.fsName;
+            }
+        catch(e){
             alert ("please, save your project before")
-            return "err" }
+            return []
+            }
 
         var listFiles= [];
          for (var i =0; i <filterArray.length; i++)
         {
-            var command = 'cmd.exe  /c dir '+ FsNFolder+'\\*.'+filterArray[i].toString()+' /s/b/o:n     >'+ fsProjFolder+'\\listSeq.txt';
+            var command = 'cmd.exe  /c dir '+ FsNFolder+'\\*'+filterArray[i].toString()+' /s/b/o:n >>'+ fsProjFolder+'\\listSeq.txt';
             system.callSystem(command);
             }
         var listf= File (fsProjFolder+'\\listSeq.txt');
         listf.open("r");
-        listff = listf.read();
+        var listff = listf.read();
         listFiles =  listff.split(/\r\n|\n/);
         listf.close();
         system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listSeq.txt');
@@ -142,25 +145,81 @@ function scanFilesWithProgressBar (folder,filter) {
    function checkMediaInfoWinOs() {
         var mediaInfoInstalled = false;
         var thisFile = new File($.fileName);  
-        var basePath = thisFile.parent.fsName; //script location
+        var basePath = Folder (thisFile.parent.fsName); //script location
         var files = basePath.getFiles();
         for (var i=0; i<files.length; i++) {
             var file = files[i];
             if (file.name === "MediaInfo_CLI" &&file instanceof Folder)
             {
-                subFiles = file.getFiles();
-                 for (var j=0; i<subFiles.length; i++) {
-                     if (subFiles[j].name ==="Mediainfo.exe") {
-                         mediainfoInstalled = true;
-                         alert (true)
+                var subFiles = file.getFiles();
+                 for (var j=0; j<subFiles.length; j++) {
+                     if (subFiles[j].name.toString() ==="MediaInfo.exe") {
+                         mediaInfoInstalled = true;
                          break;
+                        }
                     }
-                 break;
+                break
                 }
             }
-        }
         return mediaInfoInstalled
        }
+/**
+    * @param {folder} folder, array, int}
+    * @returns  Array {mediainfo}
+    */
+   function cmdListMediasInFoldersWinOs(folder,   filterArray, sequenceNumber) {
+       try{
+            var fsProjFolder = app.project.file.parent.fsName;
+            }
+       catch(e){
+            alert ("please, save your project before")
+            return []
+        }
+       try{
+            var FsNFolder = folder.fsName;
+            var thisFile = new File($.fileName); 
+            var scriptPath =  thisFile.parent; 
+            for (var i =0; i <filterArray.length; i++){
+                    var command = 'cmd.exe  /c dir '+ FsNFolder+'\\*'+filterArray[i].toString()+' /s/b/o:n >>'+ fsProjFolder+'\\listSeq.txt';
+                    system.callSystem(command); 
+            }
+            var listf= File (fsProjFolder+'\\listSeq.txt');
+            listf.open("r");
+            listff = listf.read();
+            var listMedia =  listff.split(/\r\n|\n/);
+            listf.close();
+           
+            for (var i =0; i<  listMedia.length; i++)
+            {
+                var commandMedia = 'cmd.exe /c "'+scriptPath.fsName+'\\MediaInfo_CLI\\MediaInfo.exe" --Output "'+listMedia[i]+'" >>"'+fsProjFolder+'\\listMedias.txt"';
+                 system.callSystem(commandMedia);
+                }
+            var listmedias= File (fsProjFolder+"\\listMedias.txt");
+            listmedias.open("r");
+            var listglobal =  listmedias.read();
+            if (listglobal.toString().indexOf ("General") ==-1){
+                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listMedias.txt');
+                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listSeq.txt');
+                return [sequenceNumber]};
+            
+            var mediaNumber  =sequenceNumber; // list number of detected sequences
+            var mediaListArray= [];  //array to list class of each sequences
+
+            var listInfo =  listglobal.split("\n");
+            //separate each media in the list
+            
+            media = splitMediaInfos (listInfo);
+            mediaListArray.unshift(mediaNumber);
+        
+         system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listMedias.txt');
+         system.callSystem('cmd.exe /c del '+fsProjFolder+'\\istSeq.txt');
+         return mediaListArray;
+            }
+        catch(e){
+            alert (e)
+            }
+        }
+       
 //terminal MacOs functions
       /**
     * @@param {string) 
@@ -237,24 +296,23 @@ function scanFilesWithProgressBar (folder,filter) {
     * @param {folder} folder, array, int}
     * @returns  Array {mediainfo}
     */
-   function cmdListMediasInFolders(folder,   filterArray, sequenceNumber) {
+   function cmdListMediasInFoldersMacOs(folder,   filterArray, sequenceNumber) {
         try{
              var FsNFolder = folder.fsName;
              var unixFolder = killspaceForUnix(FsNFolder);
-
-            if (system.osName.toString().indexOf("Mac") ==-1) {  alert ("for now, this function works only on MacOs");  return}
-            for (var i =0; i <filterArray.length; i++)
-                {
+             
+            if (system.osName.toString().indexOf("Mac") !=-1) {
+            for (var i =0; i <filterArray.length; i++){
                     var command = 'find '+unixFolder+' -type f -name "*'+filterArray[i].toString()+'" |sort >>'+unixFolder+'/listSeq.txt';
                     system.callSystem(command); 
                 }
             var listf= File (FsNFolder  +"/listSeq.txt");
+            }
             listf.open("r");
             listff = listf.read();
             var listMedia =  listff.split(/\r\n|\n/);
             listf.close();
            
-              //old   'find '+folder.fsName+' -type f -name "*'+filterArray[i].toString()+'" -exec mediainfo --Output {} >>'+folder.fsName+'/listMedias.txt ' +'\\;'
             for (var i =0; i<  listMedia.length; i++)
             {
                 var unixMedia = killspaceForUnix(listMedia[i]);
@@ -276,83 +334,9 @@ function scanFilesWithProgressBar (folder,filter) {
 
             var listInfo =  listglobal.split("\n");
             //separate each media in the list
-            media= {}; 
-            for (var i =0; i< listInfo.length; i++)
-            {
-                
-                if (listInfo[i].toString().indexOf ("General") !=-1){
-                    mediaNumber  +=1;
-                    media.mediaMatricule =mediaNumber ;
-                    }
-                
-                if (listInfo [i].toString().indexOf ("Complete name") !=-1){
-                    media.fullFile =  extractMediaInfo  (listInfo[i].toString());
-                    media.fileExtension =   media.fullFile.substring(media.fullFile.lastIndexOf("."));
-                    media.reelName =  media.fullFile.substring (media.fullFile.lastIndexOf("/")+1,media.fullFile.lastIndexOf(".") );
-                    media.fileFolder = media.fullFile.substring (0, media.fullFile.lastIndexOf("/"));
-                   
-                    }
-                if (listInfo[i].toString().indexOf ("Frame rate") !=-1){
-                    media.frameRate = parseFloat (extractMediaInfo  (listInfo[i].toString()));
-                }
-                if (listInfo[i].toString().indexOf ("TIM") !=-1){
-                    var tmpTcIn = extractMediaInfo  (listInfo[i].toString());
-                }
-           
-                if (listInfo [i].toString().indexOf ("Duration") !=-1){
-                    var tmpDuration  = extractMediaInfo  (listInfo[i].toString());
-                    if (tmpDuration.toString().indexOf(" h") !=-1)
-                    {
-                    	var tmpDurationh = tmpDuration.substring (0, tmpDuration.indexOf (" h"));
-                    	var tmpDurationmin =tmpDuration.substring (tmpDuration.indexOf ("h")+1, tmpDuration.indexOf ("min")-1);
-                    	var tmpDurationsec = tmpDuration.substring (tmpDuration.indexOf ("min")+4, tmpDuration.indexOf ("s")-1);
-                    	if (tmpDuration.toString().indexOf("ms") !=-1){
-                    		var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
-                    	}
-                    	else {var tmpDurationcentsec = 0}
-                    }
-                    else if (tmpDuration.toString().indexOf(" min") !=-1)
-                    {
-                    	var tmpDurationmin= tmpDuration.substring (0, tmpDuration.indexOf (" min"));
-                    	var tmpDurationsec = tmpDuration.substring (tmpDuration.indexOf ("min")+4, tmpDuration.indexOf ("s")-1);
-                        var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
-                       	if (tmpDuration.toString().indexOf("ms") !=-1){
-                    		var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
-                    	}
-                    	else {var tmpDurationcentsec = 0}
-                        }
-
-                    else if (tmpDuration.toString().indexOf(" s") !=-1)
-                    {
-                        var tmpDurationsec = tmpDuration.substring (0, tmpDuration.indexOf (" s"));
-                        if (tmpDuration.toString().indexOf("ms") !=-1){
-                    		var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
-                    	}
-                    	else {var tmpDurationcentsec = 0}
-                        }
-                    else{
-                        var tmpDurationsec = 0;
-                        var tmpDurationcentsec = tmpDuration.substring (0, tmpDuration.indexOf ("ms")-1);
-                        }
-                }
-
-                if ((i ==  (listInfo.length-1)  ||  ( listInfo[i+1].toString().indexOf ("General") !=-1)) ){
-                     media.duration =parseInt (tmpDurationh*media.frameRate*60*60) +parseInt (tmpDurationmin*media.frameRate*60) + parseInt( tmpDurationsec*media.frameRate) + parseFloat (tmpDurationcentsec*media.frameRate/100);
-                     var timecodeGenericArray = [media.frameRate*60*60, media.frameRate*60,media.frameRate,1]; 
-                     if (tmpTcIn)
-                     {
-                         var tmpArray = tmpTcIn.split (":");
-                        media.tcIn  =0;
-                        for (var j =0; j<tmpArray.length; j++)
-                        {
-                            media.tcIn  += parseInt (tmpArray[j] *timecodeGenericArray[j] );
-                            }
-                        media.tcOut =   media.tcIn + media.duration;
-                         }
-                    mediaListArray.push (media)
-                    }
-            }               
-        mediaListArray.unshift(mediaNumber);
+            
+            media = splitMediaInfos (listInfo);
+            mediaListArray.unshift(mediaNumber);
         
          system.callSystem('rm '+unixFolder+'/listSeq.txt');
          system.callSystem('rm '+unixFolder+"/listMedias.txt");
@@ -362,7 +346,82 @@ function scanFilesWithProgressBar (folder,filter) {
             alert (e)
             }
         }
- 
+ //Media info split info for mac and windows
+ function splitMediaInfos (listInfo){
+    media= {}; 
+    for (var i =0; i< listInfo.length; i++) {  
+        if (listInfo[i].toString().indexOf ("General") !=-1){
+            mediaNumber  +=1;
+            media.mediaMatricule =mediaNumber ;
+            }
+        
+        if (listInfo [i].toString().indexOf ("Complete name") !=-1){
+            media.fullFile =  extractMediaInfo  (listInfo[i].toString());
+            media.fileExtension =   media.fullFile.substring(media.fullFile.lastIndexOf("."));
+            media.reelName =  media.fullFile.substring (media.fullFile.lastIndexOf("/")+1,media.fullFile.lastIndexOf(".") );
+            media.fileFolder = media.fullFile.substring (0, media.fullFile.lastIndexOf("/"));
+           
+            }
+        if (listInfo[i].toString().indexOf ("Frame rate") !=-1){
+            media.frameRate = parseFloat (extractMediaInfo  (listInfo[i].toString()));
+        }
+        if (listInfo[i].toString().indexOf ("TIM") !=-1){
+            var tmpTcIn = extractMediaInfo  (listInfo[i].toString());
+        }
+
+        if (listInfo [i].toString().indexOf ("Duration") !=-1){
+            var tmpDuration  = extractMediaInfo  (listInfo[i].toString());
+            if (tmpDuration.toString().indexOf(" h") !=-1)
+            {
+                var tmpDurationh = tmpDuration.substring (0, tmpDuration.indexOf (" h"));
+                var tmpDurationmin =tmpDuration.substring (tmpDuration.indexOf ("h")+1, tmpDuration.indexOf ("min")-1);
+                var tmpDurationsec = tmpDuration.substring (tmpDuration.indexOf ("min")+4, tmpDuration.indexOf ("s")-1);
+                if (tmpDuration.toString().indexOf("ms") !=-1){
+                    var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
+                }
+                else {var tmpDurationcentsec = 0}
+            }
+            else if (tmpDuration.toString().indexOf(" min") !=-1)
+            {
+                var tmpDurationmin= tmpDuration.substring (0, tmpDuration.indexOf (" min"));
+                var tmpDurationsec = tmpDuration.substring (tmpDuration.indexOf ("min")+4, tmpDuration.indexOf ("s")-1);
+                var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
+                if (tmpDuration.toString().indexOf("ms") !=-1){
+                    var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
+                }
+                else {var tmpDurationcentsec = 0}
+                }
+
+            else if (tmpDuration.toString().indexOf(" s") !=-1){
+                var tmpDurationsec = tmpDuration.substring (0, tmpDuration.indexOf (" s"));
+                if (tmpDuration.toString().indexOf("ms") !=-1){
+                    var tmpDurationcentsec = tmpDuration.substring (tmpDuration.indexOf ("s")+1, tmpDuration.indexOf ("ms")-1);
+                }
+                else {var tmpDurationcentsec = 0}
+                }
+            else{
+                var tmpDurationsec = 0;
+                var tmpDurationcentsec = tmpDuration.substring (0, tmpDuration.indexOf ("ms")-1);
+                }
+        }
+        if ((i ==  (listInfo.length-1)  ||  ( listInfo[i+1].toString().indexOf ("General") !=-1)) ){
+             media.duration =parseInt (tmpDurationh*media.frameRate*60*60) +parseInt (tmpDurationmin*media.frameRate*60) + parseInt( tmpDurationsec*media.frameRate) + parseFloat (tmpDurationcentsec*media.frameRate/100);
+             var timecodeGenericArray = [media.frameRate*60*60, media.frameRate*60,media.frameRate,1]; 
+             if (tmpTcIn)
+             {
+                 var tmpArray = tmpTcIn.split (":");
+                media.tcIn  =0;
+                for (var j =0; j<tmpArray.length; j++)
+                {
+                    media.tcIn  += parseInt (tmpArray[j] *timecodeGenericArray[j] );
+                    }
+                media.tcOut =   media.tcIn + media.duration;
+                 }
+            mediaListArray.push (media)
+            }
+        } 
+    return media
+    }
 
 //Drop down lists (ddl)
     function cleanDdl (ddl) {
