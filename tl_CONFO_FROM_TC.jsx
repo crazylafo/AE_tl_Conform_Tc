@@ -223,7 +223,7 @@
             
             listFiles = getFilesList (folder, filterArray);  //list Files in targget folder and organise it
             
-            var sequenceNumber  =0; // list number of detected sequences
+            var sequenceNumber  =1; // list number of detected sequences
             var memoryTcIn =0; // temp memory of the first frame of the current sequence
             var memoryFirstFile =""; // temp memory of the first file  of the current sequence
             var sequencesListArray= [];  //array to list class of each sequences
@@ -270,14 +270,14 @@
                     }
                 }            
             sequencesListArray.unshift(sequenceNumber);
-             
             if (hasMediaInfo == true ){
-                var filterMediaArray = [".mov"]; 
+                var filterMediaArray = [".mov"];
+                var mediaListArray =[];
                 if (system.osName.toString().indexOf("Mac") !=-1){
-                    var mediaListArray = cmdListMediasInFoldersMacOs(folder,filterMediaArray , sequencesListArray[0]);
+                    mediaListArray = cmdListMediasInFoldersMacOs(folder,filterMediaArray , sequencesListArray[0]);
                     }
                 else {
-                    var mediaListArray = cmdListMediasInFoldersWinOs(folder,filterMediaArray , sequencesListArray[0]);
+                    mediaListArray = cmdListMediasInFoldersWinOs(folder,filterMediaArray , sequencesListArray[0]);
                     }
                 sequencesListArray[0] =  mediaListArray [0];
                 for (var i =1; i<mediaListArray.length; i++){
@@ -1420,10 +1420,11 @@
                     textVal.fontSize = 20;
                     textVal.font = "Arial";
                     watermarkTxt.setValue (textVal);
+                    var empty = " ";
                     
                     var txtExpr = "var thistext = ''; \r"+
                                        "var boolfound =false; \r"+
-                                       "for (var i =1; i <= thisComp.numLayers; i++){if  (thisComp.layer(i).name.indexOf ('"+precompsName+"') !=-1 && thisComp.layer(i).active) {thistext = thisComp.layer(i).name; break} if (i ==thisComp.numLayers && boolfound== false ) {thistext =}}"
+                                       "for (var i =1; i <= thisComp.numLayers; i++){if  (thisComp.layer(i).name.indexOf ('"+precompsName+"') !=-1 && thisComp.layer(i).active) {thistext = thisComp.layer(i).name; break} if (i ==thisComp.numLayers && boolfound== false ) {thistext ='"+empty.toString()+"'}}"
                     watermarkTxt.expression = txtExpr;
                     try{
                     wlayertxt.position.setValue( [app.project.activeItem.width/10, app.project.activeItem.height*0.90]);} catch(e){alert(e)} 
