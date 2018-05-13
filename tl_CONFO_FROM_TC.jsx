@@ -1,4 +1,4 @@
-﻿/**
+﻿    /**
  * @fileoverview
  *
 * @author Thomas Larforge <thomas.laforge@hrcls.tv>
@@ -112,6 +112,8 @@
                                   orientation: 'row',
                                     stxDigicut : StaticText  {text: "Select Digicut's layer"},
                                     ddlDigicut: DropDownList {alignment: ['fill','fill'],  properties: {items : ['NONE']}},
+                                    stxDigicutScopes : StaticText  {text: "Letterbox"},
+                                    etxDigicutScopes : EditText  {text: "1.77"},
                                     }
                                 layerRefGrp : Panel {
                                   text: 'Edit Reference Layer (from AAF/XML files)',
@@ -277,7 +279,7 @@
                     mediaListArray = cmdListMediasInFoldersMacOs(folder,filterMediaArray , sequencesListArray[0]);
                     }
                 else {
-                    mediaListArray = cmdListMediasInFoldersWinOs(folder,filterMediaArray , sequencesListArray[0]);
+                    mediaListArray = cmdListMediasInFoldersWinOs(folder,sequencesListArray[0]);
                     }
                 sequencesListArray[0] =  mediaListArray [0];
                 for (var i =1; i<mediaListArray.length; i++){

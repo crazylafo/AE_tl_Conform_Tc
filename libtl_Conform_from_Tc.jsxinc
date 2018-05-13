@@ -144,21 +144,13 @@ function scanFilesWithProgressBar (folder,filter) {
         }
  function checkMediaInfoWinOs() {
         var mediaInfoInstalled = false;
-        var thisFile = new File($.fileName);  
-        var basePath = Folder (thisFile.parent.fsName); //script location
+        var basePath = Folder ("C:\\Program Files\\MediaInfo_CLI");
         var files = basePath.getFiles();
         for (var i=0; i<files.length; i++) {
             var file = files[i];
-            if (file.name === "MediaInfo_CLI" &&file instanceof Folder)
-            {
-                var subFiles = file.getFiles();
-                 for (var j=0; j<subFiles.length; j++) {
-                     if (subFiles[j].name.toString() ==="MediaInfo.exe") {
-                         mediaInfoInstalled = true;
-                         break;
-                        }
-                    }
-                break
+            if (file.name.toString() === "MediaInfo.exe"){
+                 mediaInfoInstalled = true;
+                 break;
                 }
             }
         return mediaInfoInstalled
@@ -167,53 +159,33 @@ function scanFilesWithProgressBar (folder,filter) {
     * @param {folder} folder, array, int}
     * @returns  Array {mediainfo}
     */
-   function cmdListMediasInFoldersWinOs(folder,   filterArray, sequenceNumber) {
-       try{
-            var fsProjFolder = app.project.file.parent.fsName;
-            }
-       catch(e){
-            alert ("please, save your project before")
-            return []
-        }
+   function cmdListMediasInFoldersWinOs(folder, sequenceNumber) {
+       //For windows, the filter Array is defined in that batch file
        try{
             var FsNFolder = folder.fsName;
             var thisFile = new File($.fileName); 
             var scriptPath =  thisFile.parent; 
-            for (var i =0; i <filterArray.length; i++){
-                    var command = 'cmd.exe  /c dir '+ FsNFolder+'\\*'+filterArray[i].toString()+' /s/b/o:n >>'+ fsProjFolder+'\\listSeq.txt';
-                    system.callSystem(command); 
-            }
-            var listf= File (fsProjFolder+'\\listSeq.txt');
-            listf.open("r");
-            listff = listf.read();
-            var listMedia =  listff.split(/\r\n|\n/);
-            listf.close();
-           
-            for (var i =0; i<  listMedia.length; i++)
-            {
-                var commandMedia = 'cmd.exe /c "'+scriptPath.fsName+'\\MediaInfo_CLI\\MediaInfo.exe" --Output "'+listMedia[i]+'" >>"'+fsProjFolder+'\\listMedias.txt"';
-                 system.callSystem(commandMedia);
-                }
-            var listmedias= File (fsProjFolder+"\\listMedias.txt");
+            var batFile = '"'+scriptPath.fsName+'\\MediaInfoBat\\medialist.bat" ';
+            var commandMedia = 'cmd.exe /c '+ batFile+FsNFolder;
+            alert (commandMedia)
+            system.callSystem(commandMedia);
+            var listmedias= File (FsNFolder+"\\mediaList.txt");
+            alert ("test")
             listmedias.open("r");
             var listglobal =  listmedias.read();
             if (listglobal.toString().indexOf ("General") ==-1){
-                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listMedias.txt');
-                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listSeq.txt');
+                system.callSystem('cmd.exe /c del '+FsNFolder+'\\mediaList.txt');
                 return [sequenceNumber]};
             
             var mediaNumber  =sequenceNumber; // list number of detected sequences
             var mediaListArray= [];  //array to list class of each sequences
-
             var listInfo =  listglobal.split("\n");
             //separate each media in the list
-            
-            media = splitMediaInfos (listInfo);
+            var media = splitMediaInfos (listInfo);
+            mediaListArray.push (media)
             mediaListArray.unshift(mediaNumber);
-        
-         system.callSystem('cmd.exe /c del '+fsProjFolder+'\\listMedias.txt');
-         system.callSystem('cmd.exe /c del '+fsProjFolder+'\\istSeq.txt');
-         return mediaListArray;
+            system.callSystem('cmd.exe /c del '+FsNFolder+'\\mediaList.txt');
+            return mediaListArray;
             }
         catch(e){
             alert (e)
