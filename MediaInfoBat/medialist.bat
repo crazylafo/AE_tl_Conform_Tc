@@ -1,20 +1,17 @@
 @echo off
-
-echo ********** Create txt MediaInfo Files **********
+set "target=G:\documents\Bureau\aeptest"
+set "output_file=\mediaList.txt"
 set "mediainfo_path=C:\Program Files\MediaInfo_CLI\MediaInfo.exe"
-set "output_file=\mediaList.txt" 
 
 
-echo.
-echo Looking for Media Assets on target directory . . .
-dir %1\*.mov /s/b/o:n > "%1\filelist.txt"
-(for /F  "usebackq delims=" %%i in ("%1\filelist.txt") do (
-	echo %%i 
-    setlocal enabledelayedexpansion
-    "!mediainfo_path!"  -f --Output "%%i" > "%1!output_file!"
+echo ......LISTING FILES.......
+dir "%target%\"*.mov /s/b/o:n> "%target%\filelist.txt"
+
+echo .......READING FILES.......
+(for /F "usebackq delims=" %%i in ("%target%\filelist.txt") do (
+	echo %%i
+    "%mediainfo_path%"  -f --Output "%%i">>"%target%\%output_file%"
     echo()
-    endlocal
 )
-
-del "%1\filelist.txt"
+del "%target%\filelist.txt"
 echo.
