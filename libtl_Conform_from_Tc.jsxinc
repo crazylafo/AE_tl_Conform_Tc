@@ -166,11 +166,9 @@ function scanFilesWithProgressBar (folder,filter) {
             var thisFile = new File($.fileName); 
             var scriptPath =  thisFile.parent; 
             var batFile = '"'+scriptPath.fsName+'\\MediaInfoBat\\medialist.bat" ';
-            var commandMedia = 'cmd.exe /c '+ batFile+FsNFolder;
-            alert (commandMedia)
+            var commandMedia = 'cmd.exe /c'+ batFile+FsNFolder;
             system.callSystem(commandMedia);
             var listmedias= File (FsNFolder+"\\mediaList.txt");
-            alert ("test")
             listmedias.open("r");
             var listglobal =  listmedias.read();
             if (listglobal.toString().indexOf ("General") ==-1){
