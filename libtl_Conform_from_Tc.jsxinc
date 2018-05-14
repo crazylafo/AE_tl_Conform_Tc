@@ -23,8 +23,6 @@ function findFolderWithName  (name, createIt) {
 
     return item;
 }
-
-
 function findCompWithName  (name) {
     var item = null;
     var project = app.project;
@@ -100,9 +98,6 @@ function scanFilesWithProgressBar (folder,filter) {
 
     return filelist;
 }
-
-
-
  //FsName  
  /**
     * @@param {Array}String} 
@@ -155,8 +150,29 @@ function scanFilesWithProgressBar (folder,filter) {
             }
         return mediaInfoInstalled
        }
+function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
+    var batScript = '@echo off'+
+                    'set "target="'+targetFolder+'"'+
+                    'set "output_file=\mediaList.txt"'+
+                    'set "mediainfo_path=C:\Program Files\MediaInfo_CLI\MediaInfo.exe"'+
+                    'echo ......LISTING FILES.......'+
+                    'dir "%target%\"*.mov /s/b/o:n> "%target%\filelist.txt"'+
+                    'echo .......READING FILES.......'+
+                    '(for /F "usebackq delims=" %%i in ("%target%\filelist.txt") do ('+
+                    '  echo %%i'+
+                    ' "%mediainfo_path%"  -f --Output "%%i">>"%target%\%output_file%"'+
+                    '    echo()'+
+                    ')'+
+                    'del "%target%\filelist.txt"'+
+                    'echo.'
+    var batFile = new File(scriptFolder+'\\mediaList.bat');
+    batFile.open('w');
+    batFile.write(batScript)
+    batFile.close();
+    return batFile
+   }
 /**
-    * @param {folder} folder, array, int}
+    * @param {folder} folder, int}
     * @returns  Array {mediainfo}
     */
    function cmdListMediasInFoldersWinOs(folder, sequenceNumber) {
@@ -165,9 +181,9 @@ function scanFilesWithProgressBar (folder,filter) {
             var FsNFolder = folder.fsName;
             var thisFile = new File($.fileName); 
             var scriptPath =  thisFile.parent; 
-            var batFile = '"'+scriptPath.fsName+'\\MediaInfoBat\\medialist.bat" ';
-            var commandMedia = "cmd /c \""+ batFile+FsNFolder+"\"";
-            system.callSystem(commandMedia);
+            var batFile = GenerateMediaInfoBatFile(scriptPath, folder);
+            File(batFile).execute();
+            system.callSystem('cmd.exe /c del '+scriptPath+'\\mediaList.bat');
             var listmedias= File (FsNFolder+"\\mediaList.txt");
             listmedias.open("r");
             var listglobal =  listmedias.read();
