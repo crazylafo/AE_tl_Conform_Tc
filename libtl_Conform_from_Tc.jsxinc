@@ -151,23 +151,23 @@ function scanFilesWithProgressBar (folder,filter) {
         return mediaInfoInstalled
        }
 function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
-    var batScript = '@echo off'+
-                    'set "target="'+targetFolder+'"'+
-                    'set "output_file=\mediaList.txt"'+
-                    'set "mediainfo_path=C:\Program Files\MediaInfo_CLI\MediaInfo.exe"'+
-                    'echo ......LISTING FILES.......'+
-                    'dir "%target%\"*.mov /s/b/o:n> "%target%\filelist.txt"'+
-                    'echo .......READING FILES.......'+
-                    '(for /F "usebackq delims=" %%i in ("%target%\filelist.txt") do ('+
-                    '  echo %%i'+
-                    ' "%mediainfo_path%"  -f --Output "%%i">>"%target%\%output_file%"'+
-                    '    echo()'+
-                    ')'+
-                    'del "%target%\filelist.txt"'+
+    var batScript = '@echo off \r'+
+                    'set "target='+targetFolder.fsName+'" \r'+
+                    'set "output_file=\\mediaList.txt" \r'+
+                    'set "mediainfo_path=C:\\Program Files\\MediaInfo_CLI\\MediaInfo.exe" \r'+
+                    'echo ......LISTING FILES....... \r'+
+                    'dir "%target%\"*.mov /s/b/o:n> "%target%\\filelist.txt" \r'+
+                    'echo .......READING FILES....... \r'+
+                    '(for /F "usebackq delims=" %%i in ("%target%\\filelist.txt") do ( \r'+
+                    '  echo %%i \r'+
+                    ' "%mediainfo_path%"  -f --Output "%%i">>"%target%\\%output_file%"\r'+
+                    ' echo() \r'+
+                    ') \r'+
+                    'del "%target%\\filelist.txt" \r'+
                     'echo.'
-    var batFile = new File(scriptFolder+'\\mediaList.bat');
+    var batFile = new File(scriptFolder.fsName+'\\mediaList.bat');
     batFile.open('w');
-    batFile.write(batScript)
+    batFile.write(batScript.toString())
     batFile.close();
     return batFile
    }
@@ -183,7 +183,8 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
             var scriptPath =  thisFile.parent; 
             var batFile = GenerateMediaInfoBatFile(scriptPath, folder);
             File(batFile).execute();
-            system.callSystem('cmd.exe /c del '+scriptPath+'\\mediaList.bat');
+            alert ("test1")
+            //system.callSystem('cmd.exe /c del '+scriptPath+'\\mediaList.bat');
             var listmedias= File (FsNFolder+"\\mediaList.txt");
             listmedias.open("r");
             var listglobal =  listmedias.read();
