@@ -156,11 +156,11 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
                     'set "output_file=\\mediaList.txt" \r'+
                     'set "mediainfo_path=C:\\Program Files\\MediaInfo_CLI\\MediaInfo.exe" \r'+
                     'echo ......LISTING FILES....... \r'+
-                    'dir "%target%\"*.mov /s/b/o:n> "%target%\\filelist.txt" \r'+
+                    'dir "%target%\\"*.mov /s/b/o:n> "%target%\\filelist.txt" \r'+
                     'echo .......READING FILES....... \r'+
                     '(for /F "usebackq delims=" %%i in ("%target%\\filelist.txt") do ( \r'+
                     '  echo %%i \r'+
-                    ' "%mediainfo_path%"  -f --Output "%%i">>"%target%\\%output_file%"\r'+
+                    ' "%mediainfo_path%"  -f --Output "%%i ">>"%target%\\%output_file%"\r'+
                     ' echo() \r'+
                     ') \r'+
                     'del "%target%\\filelist.txt" \r'+
@@ -181,10 +181,8 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
             var FsNFolder = folder.fsName;
             var thisFile = new File($.fileName); 
             var scriptPath =  thisFile.parent; 
-            var batFile = GenerateMediaInfoBatFile(scriptPath, folder);
+            var batFile = GenerateMediaInfoBatFile(scriptPath, FsNFolder);
             File(batFile).execute();
-            alert ("test1")
-            //system.callSystem('cmd.exe /c del '+scriptPath+'\\mediaList.bat');
             var listmedias= File (FsNFolder+"\\mediaList.txt");
             listmedias.open("r");
             var listglobal =  listmedias.read();
