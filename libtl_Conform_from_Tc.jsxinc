@@ -23,7 +23,7 @@ function findFolderWithName  (name, createIt) {
 
     return item;
 }
-function findCompWithName  (name) {
+function findCompWithName(name) {
     var item = null;
     var project = app.project;
     for(var i=1;i<=project.numItems;i++) {
@@ -183,11 +183,12 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
             var scriptPath =  thisFile.parent; 
             var batFile = GenerateMediaInfoBatFile(scriptPath, FsNFolder);
             File(batFile).execute();
+            system.callSystem('cmd.exe /c del "'+batFile.fsName+'"');
             var listmedias= File (FsNFolder+"\\mediaList.txt");
             listmedias.open("r");
             var listglobal =  listmedias.read();
             if (listglobal.toString().indexOf ("General") ==-1){
-                system.callSystem('cmd.exe /c del '+FsNFolder+'\\mediaList.txt');
+                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\mediaList.txt');
                 return [sequenceNumber]};
             
             var mediaNumber  =sequenceNumber; // list number of detected sequences
@@ -197,7 +198,7 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
             var media = splitMediaInfos (listInfo);
             mediaListArray.push (media)
             mediaListArray.unshift(mediaNumber);
-            system.callSystem('cmd.exe /c del '+FsNFolder+'\\mediaList.txt');
+            system.callSystem('cmd.exe /c del '+fsProjFolder+'\\mediaList.txt');
             return mediaListArray;
             }
         catch(e){
