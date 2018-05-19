@@ -152,7 +152,7 @@ function scanFilesWithProgressBar (folder,filter) {
        }
 function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
     var batScript = '@echo off \r'+
-                    'set "target='+targetFolder.fsName+'" \r'+
+                    'set "target='+targetFolder+'" \r'+
                     'set "output_file=\\mediaList.txt" \r'+
                     'set "mediainfo_path=C:\\Program Files\\MediaInfo_CLI\\MediaInfo.exe" \r'+
                     'echo ......LISTING FILES....... \r'+
@@ -183,22 +183,20 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
             var scriptPath =  thisFile.parent; 
             var batFile = GenerateMediaInfoBatFile(scriptPath, FsNFolder);
             File(batFile).execute();
-            system.callSystem('cmd.exe /c del "'+batFile.fsName+'"');
+            $.sleep(1000)
+            
             var listmedias= File (FsNFolder+"\\mediaList.txt");
-            listmedias.open("r");
             var listglobal =  listmedias.read();
             if (listglobal.toString().indexOf ("General") ==-1){
-                system.callSystem('cmd.exe /c del '+fsProjFolder+'\\mediaList.txt');
+                system.callSystem('cmd.exe /c del "'+FsNFolder+'\\mediaList.txt"');
                 return [sequenceNumber]};
-            
-            var mediaNumber  =sequenceNumber; // list number of detected sequences
-            var mediaListArray= [];  //array to list class of each sequences
-            var listInfo =  listglobal.split("\n");
-            //separate each media in the list
-            var media = splitMediaInfos (listInfo);
-            mediaListArray.push (media)
-            mediaListArray.unshift(mediaNumber);
-            system.callSystem('cmd.exe /c del '+fsProjFolder+'\\mediaList.txt');
+            var listInfo =  listglobal.split("\n");  //separate each media in the list   
+            var media = splitMediaInfos(listInfo);
+            var mediaListArray = splitMediaInfos(listInfo);
+            var seqNum = sequenceNumber +  mediaListArray[0];
+            mediaListArray[0] =  seqNum;           
+            system.callSystem('cmd.exe /c del "'+FsNFolder+'\\mediaList.txt"');
+            system.callSystem('cmd.exe /c del "'+batFile.fsName+'"');
             return mediaListArray;
             }
         catch(e){
@@ -315,33 +313,33 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
                 system.callSystem('rm '+ unixFolder +"/listMedias.txt");
                 system.callSystem('rm '+ unixFolder+'/listSeq.txt');
                 return [sequenceNumber]};
-            
-            var mediaNumber  =sequenceNumber; // list number of detected sequences
-            var mediaListArray= [];  //array to list class of each sequences
 
-            var listInfo =  listglobal.split("\n");
-            //separate each media in the list
+            var listInfo =  listglobal.split("\n");  //separate each media in the list   
+            var media = splitMediaInfos(listInfo);
+            var mediaListArray = splitMediaInfos(listInfo);
+            var seqNum = sequenceNumber +  mediaListArray[0];
+            mediaListArray[0] =  seqNum;
             
-            var media= splitMediaInfos (listInfo);
-            mediaListArray.push (media)
-            mediaListArray.unshift(mediaNumber);
         
          system.callSystem('rm '+unixFolder+'/listSeq.txt');
          system.callSystem('rm '+unixFolder+"/listMedias.txt");
          return mediaListArray;
-            }
+        }
         catch(e){
             alert (e)
             }
         }
  //Media info split info for mac and windows
- function splitMediaInfos (listInfo){
-    media= {}; 
-    for (var i =0; i< listInfo.length; i++) {  
+ function splitMediaInfos(listInfo){
+    var mediaNumber  =0;
+     var mediaListArray= [];  //array to list class of each sequences
+    for (var i =0; i< listInfo.length; i++) { 
+        var media= {}; 
         if (listInfo[i].toString().indexOf ("General") !=-1){
             mediaNumber  +=1;
             media.mediaMatricule =mediaNumber ;
             }
+        else {continue}
         
         if (listInfo [i].toString().indexOf ("Complete name") !=-1){
             media.fullFile =  extractMediaInfo  (listInfo[i].toString());
@@ -406,8 +404,10 @@ function GenerateMediaInfoBatFile (scriptFolder, targetFolder){
                 media.tcOut =   media.tcIn + media.duration;
                  }
             }
+        mediaListArray.push (media);
         } 
-    return media
+    mediaListArray.unshift(mediaNumber);
+    return mediaListArray
     }
 
 //Drop down lists (ddl)
