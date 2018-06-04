@@ -1,4 +1,4 @@
-﻿    /**
+/**
  * @fileoverview
  *
 * @author Thomas Larforge <thomas.laforge@hrcls.tv>
@@ -112,8 +112,6 @@
                                   orientation: 'row',
                                     stxDigicut : StaticText  {text: "Select Digicut's layer"},
                                     ddlDigicut: DropDownList {alignment: ['fill','fill'],  properties: {items : ['NONE']}},
-                                    stxDigicutScopes : StaticText  {text: "Letterbox"},
-                                    etxDigicutScopes : EditText  {text: "1.77"},
                                     }
                                 layerRefGrp : Panel {
                                   text: 'Edit Reference Layer (from AAF/XML files)',
@@ -154,40 +152,7 @@
     }
 
    
-    function splitFileName(scannedFile){
-        if (scannedFile != null) {
-            if ($.os.indexOf ("Windows") !=-1){
-                var dot = scannedFile.lastIndexOf(".");
-                var delimitationStr = "\\";
-                var slash = scannedFile.lastIndexOf (delimitationStr);
-                }
-            else {
-                var dot = scannedFile.lastIndexOf(".");
-                var slash =  scannedFile.lastIndexOf("/");
-                }
     
-            var fileExt =  scannedFile.substr( dot, scannedFile.length);
-            var scannedFileWithoutExt = scannedFile.substr (0, dot);
-            var parentFileFolder = scannedFileWithoutExt.substr (0, slash);
-            var reelNameAndTimeCode = scannedFileWithoutExt.substr (slash+1,  scannedFileWithoutExt.toString().length);
-            var reelName = "";
-            var timeCode = 0;   
-            var splitArray = [];
-                     
-            for ( var a=reelNameAndTimeCode.length-1; a>0; a--){
-                //if char (a) is not a number --> end of the TimeCode description
-                if ( isNaN(reelNameAndTimeCode.charAt(a) ) ||
-                (reelNameAndTimeCode.charAt(a) === ".") ){
-                    reelName = reelNameAndTimeCode.substring(0, (a+1) );
-                    timeCode =  parseInt (reelNameAndTimeCode.substr ( ( a+1), dot), 10);
-                    splitArray.push ( parentFileFolder,  reelName, timeCode, fileExt);
-                    break;
-                    }
-                }
-            return  splitArray;
-            }  
-        return null;
-    }
       /**
      * @param {Folder} folder,   String} filters for  files support to input
      * @returns  Array{list of files })
@@ -237,7 +202,7 @@
                 var currentFrameFolder = splitFileName(listFiles[i])[0];
                 var nextFrameFolder = splitFileName(listFiles[i+1])[0];
                 var currentFrameReelName = splitFileName(listFiles[i])[1];
-                var nextFrameReelName =splitFileName(listFiles[i+1])[1] ;
+                var nextFrameReelName =splitFileName(listFiles[i+1])[1];
                 var currentTimeCode =  splitFileName(listFiles[i])[2];
                 var nextTimeCode = splitFileName(listFiles[i+1])[2];
                  
@@ -279,7 +244,7 @@
                     mediaListArray = cmdListMediasInFoldersMacOs(folder,filterMediaArray , sequencesListArray[0]);
                     }
                 else {
-                    mediaListArray = cmdListMediasInFoldersWinOs(folder,sequencesListArray[0]);
+                    mediaListArray = cmdListMediasInFoldersWinOs(folder,filterMediaArray , sequencesListArray[0]);
                     }
                 sequencesListArray[0] =  mediaListArray [0];
                 for (var i =1; i<mediaListArray.length; i++){
@@ -354,22 +319,20 @@
                     }
                 }
          if (boolNameMerge== true ){
-             var originalDurationFrames =  Math.abs  (parseInt(originalDuration*app.project.activeItem.frameRate));
+             var originalDurationFrames =  Math.abs(parseInt(originalDuration*app.project.activeItem.frameRate));
                 if (SyncMethod ==2 && (!handlesFbool)){
                     var newFootageDuration =  parseInt (inputTcOut) -  (parseInt (inputTcIn) ) ;
-                    if ( originalDurationFrames <= newFootageDuration +parseInt(handleOut) &&
-                         originalDurationFrames >= newFootageDuration -2*parseInt(handleIn))  {
+                    if (  newFootageDuration <= (originalDurationFrames +parseInt(handleOut)+parseInt(handleIn)) &&
+                         newFootageDuration  >= (originalDurationFrames -  parseInt(handleIn)) ) { 
                             boolReturn = true;
                         }
-                    else {
-                         boolReturn = false;
-                        }
                     }
-                 if (SyncMethod ==2 && handlesFbool){
+
+                else if (SyncMethod ==2 && handlesFbool){
                     var newFootageDuration = 1+ parseInt (inputTcOut) -  parseInt (inputTcIn) -parseInt(handleIn)-parseInt(handleOut);
                     
                     //alert (newFootageDuration +"_____"+originalDurationFrames);
-                    if ( originalDurationFrames == newFootageDuration )  {
+                    if ( originalDurationFrames == newFootageDuration ){
                             boolReturn = true;
                         }
                     else {
@@ -377,10 +340,10 @@
                         }
                     }
                 
-           	else if ((parseInt (originalTcIn) >= parseInt (inputTcIn) ) &&   //firtst compare with [tcIn and tcIn + duration.]
-                (parseInt (originalTcIn + (originalDuration*layerFrameRate)) <= parseInt (inputTcOut))) {
-                    boolReturn = true;
-                }
+               	else if ((parseInt (originalTcIn) >= parseInt (inputTcIn) ) &&   //firtst compare with [tcIn and tcIn + duration.]
+                    (parseInt (originalTcIn + (originalDuration*layerFrameRate)) <= parseInt (inputTcOut))) {
+                        boolReturn = true;
+                    }
                 else if ( (parseInt (originalTcIn) >= parseInt (inputTcIn)) && //then try with [tcIn and tcIn + tcOut]
                         (parseInt (originalTcOut) <= parseInt (inputTcOut))){
                  boolReturn = true;
@@ -598,23 +561,30 @@
                 }
             
             // apply timeremap effects if checkbox selected and original footage has timeremap
-            if ( ( boolsParam.boolTimeWarp) && (originalParams.timeremapEnabled == true ) ) {   
-                newLayer.timeRemapEnabled = true;
-                newLayer.property("Time Remap").removeKey(1);
-                var diffTime = parseFloat (newLayer.startTime) - parseFloat (originalParams.originalStartTime); // diff timing befween the native and the imported footage
-                for (var k =0; k< originalParams.timeRemapArray.length; k++) {
-                    try{
-                        newLayer.property("Time Remap").setValueAtTime ( originalParams.timeRemapArray[k].timeKey, originalParams.timeRemapArray[k].remapKey - diffTime);
-                        }
-                    catch (e){};
-                    }
-                try {
-                    newLayer.property("Time Remap").setValueAtTime (newLayer.inPoint, referenceLayer.property("Time Remap").valueAtTime (newLayer.inPoint, false) - diffTime);
-                    newLayer.property("Time Remap").setValueAtTime (newLayer.outPoint, referenceLayer.property("Time Remap").valueAtTime (newLayer.outPoint, false) - diffTime);
-                    }
-                catch (e) {}
+
+              
+            if ( boolsParam.boolTimeWarp){
+                if (referenceLayer.stretch !=100){
+                newLayer.stretch = referenceLayer.stretch;
                 }
-            
+                if (originalParams.timeremapEnabled == true )  {   
+                    newLayer.timeRemapEnabled = true;
+                    newLayer.property("Time Remap").removeKey(1);
+                    var diffTime = parseFloat (newLayer.startTime) - parseFloat (originalParams.originalStartTime); // diff timing befween the native and the imported footage
+                    for (var k =0; k< originalParams.timeRemapArray.length; k++) {
+                        try{
+                            newLayer.property("Time Remap").setValueAtTime ( originalParams.timeRemapArray[k].timeKey, originalParams.timeRemapArray[k].remapKey - diffTime);
+                            }
+                        catch (e){};
+                        }
+                    try {
+                        newLayer.property("Time Remap").setValueAtTime (newLayer.inPoint, referenceLayer.property("Time Remap").valueAtTime (newLayer.inPoint, false) - diffTime);
+                        newLayer.property("Time Remap").setValueAtTime (newLayer.outPoint, referenceLayer.property("Time Remap").valueAtTime (newLayer.outPoint, false) - diffTime);
+                        }
+                    catch (e) {}
+                    }
+                }
+
             //apply opacity effects if dropbox selected
             if (boolsParam.boolOpacity) {
                 if (originalParams.opacityKeyArray[0] ==0) {
@@ -841,10 +811,13 @@
             var footageInCompTC = getLayerTimeCodes ( app.project.activeItem.layer(index));
             var boolTimeRemap = false;
             if (app.project.activeItem.layer(index).timeRemapEnabled) {
-                    boolTimeRemap =true;
+                    boolTimeRemap =true;getCleanLayerSourceFile
                     }   
-            var sourceFile = getCleanLayerSourceFile (app.project.activeItem.layer(index));    
-            var compareFootage = checkMergedFootages (targetSequence.reelName, sourceFile, targetSequence.tcIn, footageInCompTC[0], targetSequence.tcOut, footageInCompTC[1], footageInCompTC[2], method, boolTimeRemap, currentLayerFrameRate, handlesParam.handleIn, handlesParam.handleOut, handlesParam.handlesFbool);                                                                                                             
+            var sourceFile = getCleanLayerSourceFile(app.project.activeItem.layer(index));
+            var sourceReelName = getLayerSourceReelName (app.project.activeItem.layer(index));
+
+
+            var compareFootage = checkMergedFootages (targetSequence.reelName, sourceReelName, targetSequence.tcIn, footageInCompTC[0], targetSequence.tcOut, footageInCompTC[1], footageInCompTC[2], method, boolTimeRemap, currentLayerFrameRate, handlesParam.handleIn, handlesParam.handleOut, handlesParam.handlesFbool);                                                                                                             
             if ( compareFootage === true) { 
                 var importExternalFootage = importSequenceFiles (targetSequence.firstFile,targetSequence.reelName,footageInProject ); //check if the file already in project 's footage  
                 var newLayer = app.project.activeItem.layers.add (importExternalFootage);  //input item in the composition  
@@ -875,16 +848,16 @@
     * apply conform by timecode method /return void
     */
     function conformByTime ( method, newLayerName, targetSequences, precompsFolder , precompsName,boolsParam, footageFolder, handlesParam,methodmatricule){
-        
-         if (!targetSequences && methodmatricule !=1 ) {alert ("select a source Folder"); return };
+
+        if (!targetSequences && methodmatricule !=1 ) {alert ("select a source Folder"); return };
         // var for the ending result
         var numItemsImported =0;
         var numImportedPrecomps =0;
         var numGeneratedPrecomps =0;
-       var footageInProject =searchFootageFilesInProject();
+        var footageInProject =searchFootageFilesInProject();
         //For the genereted precomps array
         var compsArray =[];
-         if (methodmatricule !=0) {
+        if (methodmatricule !=0) {
                 compsArray = getPrecompsList (precompsName.toString());
                 }
         for (var i =app.project.activeItem.numLayers ; i >0 ; i --) { //STARTING  OF EACH COMP ITEMS
@@ -921,9 +894,6 @@
             }
         alert (numItemsImported + " files imported, "+numGeneratedPrecomps + " generated precomps, "+  numImportedPrecomps + " imported precomps" );
         }
-       
-
-
     function addSampleFx (activeComp, fxName,layerdigicutIndex){
         //create and param  Solid FX
         var SolidEffect =activeComp.layers.addSolid( [1,1,1], "SampleFx", activeComp.width, activeComp.height,activeComp.pixelAspect, activeComp.duration);
@@ -1007,7 +977,6 @@
         var rgb = rgbAdress[0].valueAtTime(timeT) +rgbAdress[1].valueAtTime(timeT) +rgbAdress[2].valueAtTime(timeT);
         //alert (rgb);
         var luma =sampleFxArray[4].valueAtTime(timeT);
-        
         return [rgb, luma]
         }
     function getTestValues (paramValue, MaxAround){
@@ -1408,7 +1377,13 @@
            
             else
             {
-                conformByTime (method, newLayerName, targetSequences,precompsFolder , precompsName,boolsParam, footageFolder, handlesParam, methodmatricule);
+                try{
+                    conformByTime (method, newLayerName, targetSequences,precompsFolder , precompsName,boolsParam, footageFolder, handlesParam, methodmatricule);
+                }
+                catch (e){
+                    alert (e)
+                }
+                
                
             }
              var boolShot = panel.grp.MainGrp.impSettingsMethodGrp.precompGrp.cbWatermark.value;
