@@ -5,6 +5,7 @@ var fps = 25;
 var tolerance = 0.0040;
 
 
+
   	/**
     * check plugin install
     * @
@@ -90,13 +91,10 @@ var tolerance = 0.0040;
 			    tempWindow.progressScan = tempWindow.add("progressBar", undefined, 0, numFrames);
 			    tempWindow.progressScan.preferredSize.width = 300;
 			    tempWindow.show();
-
-
-
 	    	for (var i =0; i < numFrames; i++){
 
 	    		tempWindow .progressScan.value = i*100/numFrames;
-	    		result = callAnalys (sampleFxArray, i);
+	    		result = callAnalys (sampleFxArray, parseFloat (i/fps));
 	    		if (result[1]> tolerance){
 
 	    			var error = {};
