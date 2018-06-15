@@ -31,9 +31,9 @@ var tolerance = 0.0040;
         var sampleFx = SolidEffect.Effects.addProperty (fxName);
 
         // Param layer 1
-        sampleFx.property(2).setValue (layerRefIndex);
+        sampleFx.property(2).setValue (layerTargetIndex);
          // Param layer 2
-        sampleFx.property(3).setValue (layerTargetIndex);
+        sampleFx.property(3).setValue (layerRefIndex);
         //comparatif = substract
         sampleFx.property(4).setValue(3);
         
