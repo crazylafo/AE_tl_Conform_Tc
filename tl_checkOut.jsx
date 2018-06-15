@@ -2,7 +2,7 @@
 var refLayerIndex = 1;   //reference or digicut layer
 var targetLayerIndex =2; // targetLayerIndex;
 var fps = 25;
-var tolerance = 0.0040;
+var tolerance = 0.0030;
 
 
 
