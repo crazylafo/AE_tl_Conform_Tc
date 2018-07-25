@@ -424,8 +424,8 @@ function scanFilesWithProgressBar (folder,filter) {
         }
  //Media info split info for mac and windows
  function splitMediaInfos (listInfo){
-    media= {}; 
-    for (var i =0; i< listInfo.length; i++) {  
+    var media= {}; 
+    for (var i =0; i< listInfo.length; i++){  
         if (listInfo[i].toString().indexOf ("General") !=-1){
             mediaNumber  +=1;
             media.mediaMatricule =mediaNumber ;
